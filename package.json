@@ -18,7 +18,8 @@
     "reactify": "^1.1.1"
   },
   "scripts": {
-    "test": "jasmine-node test/ --forceexit --verbose --captureExceptions"
+    "test": "jasmine-node test/ --forceexit --verbose --captureExceptions",
+    "watch": "nodemon --exec make --ignore test/build.js"
   },
   "repository": {
     "type": "git",

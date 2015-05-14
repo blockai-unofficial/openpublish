@@ -3,8 +3,19 @@ var createTorrent = require('create-torrent');
 var parseTorrent = require('parse-torrent');
 var magnet = require('magnet-uri');
 var crypto = require("crypto");
+
+var bitstore = require('bitstore')({
+  privateKey: 'KyjhazeX7mXpHedQsKMuGh56o3rh8hm8FGhU3H6HPqfP9pA4YeoS',
+  network: 'testnet'
+});
+
 dragDrop('#drop', function (files) {
   files.forEach(function (file) {
+    console.log(typeof file);
+    console.log(file);
+    bitstore.files.put(file, function (err, res) {
+      console.log(arguments);
+    });
     var reader = new FileReader();
     reader.addEventListener('load', function (e) {
       var arr = new Uint8Array(e.target.result);
