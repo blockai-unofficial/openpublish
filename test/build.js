@@ -1674,7 +1674,7 @@ module.exports={
     "shasum": "90ac1aeac0a531216463bdb58f42c1e05c8407ac",
     "tarball": "http://registry.npmjs.org/bigi/-/bigi-1.4.0.tgz"
   },
-  "_from": "bigi@^1.4.0",
+  "_from": "bigi@>=1.4.0 <2.0.0",
   "_npmVersion": "1.4.3",
   "_npmUser": {
     "name": "jp",
@@ -8915,8 +8915,8 @@ var bitcoin = require('bitcoinjs-lib');
 var url = require('url');
 
 var bitstoreClient = function (options) {
-  if (!options.privateKey) {
-    throw new Error('Must initialize client with private key.');
+  if (!options.privateKey && (!options.signMessage || !options.address)) {
+    throw new Error('Must initialize client with private key or signMessage function and address.');
   }
   if (!options.endpoint) {
     if (options.network === 'testnet') {
@@ -8927,13 +8927,22 @@ var bitstoreClient = function (options) {
     }
   }
 
-  var key = bitcoin.ECKey.fromWIF(options.privateKey);
-
   var network;
   if (options.network === 'testnet') {
     network = bitcoin.networks.testnet;
   }
-  var addressString = key.pub.getAddress(network).toString();
+
+  var signMessage = options.signMessage;
+  var addressString = options.address;
+
+  if (!options.signMessage) {
+    var key = bitcoin.ECKey.fromWIF(options.privateKey);
+    addressString = key.pub.getAddress(network).toString();
+    signMessage = function (message) {
+      var signature = bitcoin.Message.sign(key, message, network).toString('base64');
+      return signature;
+    };
+  }
 
   //var addressString = privKey.toPublicKey().toAddress().toString();
 
@@ -8954,15 +8963,36 @@ var bitstoreClient = function (options) {
         // X-BTC-Signature proves user knows privkey of pubkey
         // signature could be simply siging blokai.com or the whole
         // request...
-        var message = url.parse(options.endpoint).host;
 
-        // Sign host with private key
-        var signature = bitcoin.Message.sign(key, message, network).toString('base64');
+        /**
+         * We need to mofify agent's end() function to be able
+         * to do an async call before callind end.
+         */
+        agent._end = agent.end;
+        agent.end = function (fn) {
+          var message = url.parse(options.endpoint).host;
+          // Sign host with private key
 
-        debug('Signature:', signature);
+          // Async
+          if (signMessage.length === 2) {
+            signMessage(message, function (err, signature) {
+              if (err) return fn(err);
+              debug('Signature:', signature);
+              agent.set('X-BTC-Address', addressString);
+              agent.set('X-BTC-Signature', signature);
+              return agent._end(fn);
+            });
+          }
+          // Sync
+          else {
+            var signature = signMessage(message);
+            debug('Signature:', signature);
+            agent.set('X-BTC-Address', addressString);
+            agent.set('X-BTC-Signature', signature);
+            return agent._end(fn);
+          }
+        };
 
-        agent.set('X-BTC-Address', addressString);
-        agent.set('X-BTC-Signature', signature);
 
         return agent;
       };
@@ -19223,7 +19253,7 @@ module.exports={
   "gitHead": "17dc013761dd1efcfb868e2b06b0b897627b40be",
   "_id": "elliptic@1.0.1",
   "_shasum": "d180376b66a17d74995c837796362ac4d22aefe3",
-  "_from": "elliptic@^1.0.0",
+  "_from": "elliptic@>=1.0.0 <2.0.0",
   "_npmVersion": "1.4.28",
   "_npmUser": {
     "name": "indutny",
@@ -30578,11 +30608,58 @@ arguments[4][249][0].apply(exports,arguments)
 arguments[4][257][0].apply(exports,arguments)
 },{"dup":257}],268:[function(require,module,exports){
 (function (Buffer){
-var dragDrop = require('drag-drop');
 var createTorrent = require('create-torrent');
 var parseTorrent = require('parse-torrent');
 var magnet = require('magnet-uri');
 var crypto = require("crypto");
+
+var post = function(options, callback) {
+  var file = options.file;
+  var reader = new FileReader();
+  reader.addEventListener('load', function (e) {
+    var arr = new Uint8Array(e.target.result);
+    var buffer = new Buffer(arr);
+    buffer.name = file.name;
+    var sha1 = crypto.createHash('sha1').update(arr).digest("hex");
+    createTorrent(buffer, function onTorrent (err, torrentBuffer) {
+      var torrent = parseTorrent(torrentBuffer);
+      var btih = torrent.infoHash;
+      var uri = magnet.encode({
+        xt: [
+          'urn:sha1:' + sha1,
+          'urn:btih:' + btih
+        ],
+        tr: [
+          'udp://tracker.webtorrent.io:80'
+        ],
+        xl: file.size,
+        dn: file.name,
+        as: 'https://bitstore.com/thing',
+      });
+      var receipt = {
+        magnetUri: uri,
+        btih: btih,
+        sha1: sha1,
+        name: file.name,
+        size: file.size,
+        type: file.type
+      }
+      callback(false, receipt);
+    });
+  });
+  reader.readAsArrayBuffer(file);
+};
+
+var OpenPublish = {
+  post: post
+};
+
+module.exports = OpenPublish;
+
+}).call(this,require("buffer").Buffer)
+},{"buffer":58,"create-torrent":226,"crypto":62,"magnet-uri":254,"parse-torrent":259}],269:[function(require,module,exports){
+var dragDrop = require('drag-drop');
+var OpenPublish = require("../src/index");
 
 var bitstore = require('bitstore')({
   privateKey: 'KyjhazeX7mXpHedQsKMuGh56o3rh8hm8FGhU3H6HPqfP9pA4YeoS',
@@ -30591,45 +30668,15 @@ var bitstore = require('bitstore')({
 
 dragDrop('#drop', function (files) {
   files.forEach(function (file) {
-    console.log(typeof file);
-    console.log(file);
     bitstore.files.put(file, function (err, res) {
       console.log(arguments);
     });
-    var reader = new FileReader();
-    reader.addEventListener('load', function (e) {
-      var arr = new Uint8Array(e.target.result);
-      var buffer = new Buffer(arr);
-      buffer.name = file.name;
-      var sha1 = crypto.createHash('sha1').update(arr).digest("hex");
-      createTorrent(buffer, function onTorrent (err, torrentBuffer) {
-        var torrent = parseTorrent(torrentBuffer);
-        console.log(torrent);
-        var btih = torrent.infoHash;
-        console.log('btih:', btih);
-        console.log('sha1:', sha1);
-        console.log('name:', file.name);
-        console.log('size:', file.size);
-        console.log('type:', file.type);
-        var uri = magnet.encode({
-          xt: [
-            'urn:sha1:' + sha1,
-            'urn:btih:' + btih
-          ],
-          tr: [
-            'udp://tracker.webtorrent.io:80'
-          ],
-          xl: file.size,
-          dn: file.name,
-          as: 'https://bitstore.com/thing',
-        });
-        console.log(uri.length);
-        console.log(uri);
-      });
+    OpenPublish.post({
+      file: file
+    }, function(err, receipt) {
+      console.log(err, receipt);
     });
-    reader.readAsArrayBuffer(file);
   });
 });
 
-}).call(this,require("buffer").Buffer)
-},{"bitstore":54,"buffer":58,"create-torrent":226,"crypto":62,"drag-drop":250,"magnet-uri":254,"parse-torrent":259}]},{},[268]);
+},{"../src/index":268,"bitstore":54,"drag-drop":250}]},{},[269]);
