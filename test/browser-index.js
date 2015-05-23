@@ -8,9 +8,9 @@ var bitstore = require('bitstore')({
 
 dragDrop('#drop', function (files) {
   files.forEach(function (file) {
-    bitstore.files.put(file, function (err, res) {
-      console.log(arguments);
-    });
+    // bitstore.files.put(file, function (err, res) {
+    //   console.log(arguments);
+    // });
     OpenPublish.post({
       file: file
     }, function(err, receipt) {
