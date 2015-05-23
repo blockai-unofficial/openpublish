@@ -195,7 +195,7 @@ describe("open-publish", function() {
         expect(receipt.filename).toBe(randomFileName);
         expect(uri).toBeDefined();
         getUnspentOutputs(address, function(err, unspentOutputs) {
-          randomFile.size = randomBufferSize;
+          randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
           OpenPublish.post({
             uri: uri,
             file: randomFile,
@@ -204,16 +204,24 @@ describe("open-publish", function() {
             signTransaction: signTransaction,
             propagateTransaction: propagateTransaction
           }, function(err, receipt) {
-            var data = receipt.data;
-            expect(data.op).toBe("r");
-            expect(data.sha1).toBe(bistoreSha1);
-            expect(data.name).toBe(randomFileName);
-            expect(data.size).toBe(randomBufferSize);
-            expect(data.type).toBe(bitstoreMimetype);
-            expect(data.uri).toBe(uri);
-            request(uri, function(err, res, body) {
-              expect(body).toBe(randomString)
-              done();
+            var blockcastTx = receipt.blockcastTx;
+            var txHash = blockcastTx.txHash;
+            expect(txHash).toBeDefined();
+            blockcast.scanSingle({
+              txHash: txHash,
+              getTransaction: getTransaction
+            }, function(err, message) {
+              var data = JSON.parse(message);
+              expect(data.op).toBe("r");
+              expect(data.sha1).toBe(bistoreSha1);
+              expect(data.name).toBe(randomFileName);
+              expect(data.size).toBe(randomBufferSize);
+              expect(data.type).toBe(bitstoreMimetype);
+              expect(data.uri).toBe(uri);
+              request(data.uri, function(err, res, body) {
+                expect(body).toBe(randomString);
+                done();
+              });
             });
           });
         });
