@@ -1,10 +1,10 @@
 {
-  "name": "open-publish",
-  "version": "0.0.0",
+  "name": "openpublish",
+  "version": "0.0.1",
   "description": "A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.",
   "main": "src/index.js",
   "directories": {
-    "test": "test"
+    "test": "npm test"
   },
   "dependencies": {
     "bitstore": "0.0.2",
@@ -32,7 +32,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/blockai/open-publish.git"
+    "url": "https://github.com/blockai/openpublish.git"
   },
   "keywords": [
     "bitcoin",
