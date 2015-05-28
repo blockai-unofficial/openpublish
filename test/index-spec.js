@@ -132,7 +132,7 @@ describe("open-publish", function() {
 
   it("should publish a small text file", function(done) {
     getUnspentOutputs(address, function(err, unspentOutputs) {
-      OpenPublish.post({
+      OpenPublish.register({
         file: file,
         title: fileTitle,
         keywords: fileKeywords,
@@ -179,7 +179,7 @@ describe("open-publish", function() {
     });
   });
 
-  it("should post to bitstore and then open publish", function(done) {
+  it("should post to bitstore and then register with open publish", function(done) {
     var randomBufferSize = 48;
     var randomFileName = 'randomFile.txt';
     var randomString = createRandomString(randomBufferSize);
@@ -196,7 +196,7 @@ describe("open-publish", function() {
         expect(uri).toBeDefined();
         getUnspentOutputs(address, function(err, unspentOutputs) {
           randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
-          OpenPublish.post({
+          OpenPublish.register({
             uri: uri,
             file: randomFile,
             address: address,

@@ -6,7 +6,7 @@ var blockcast = require("blockcast");
 
 var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader");
 
-var post = function(options, callback) {
+var register = function(options, callback) {
   var file = options.file;
   var keywords = options.keywords;
   var title = options.title;
@@ -63,7 +63,7 @@ var post = function(options, callback) {
 };
 
 var OpenPublish = {
-  post: post
+  register: register
 };
 
 module.exports = OpenPublish;

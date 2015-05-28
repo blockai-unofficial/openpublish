@@ -11,7 +11,7 @@ dragDrop('#drop', function (files) {
     // bitstore.files.put(file, function (err, res) {
     //   console.log(arguments);
     // });
-    OpenPublish.post({
+    OpenPublish.register({
       file: file
     }, function(err, receipt) {
       console.log(err, receipt);
