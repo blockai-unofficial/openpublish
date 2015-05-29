@@ -16,17 +16,19 @@ var register = function(options, callback) {
   var propagateTransaction = options.propagateTransaction;
   var propagationStatus = options.propagationStatus;
   var signTransaction = options.signTransaction;
+  var sha1 = options.sha1;
   var reader = new FileReader();
   reader.addEventListener('load', function (e) {
     var arr = new Uint8Array(e.target.result);
     var buffer = new Buffer(arr);
     buffer.name = file.name;
-    var sha1;
-    if (typeof(window) == "undefined") {
-      sha1 = crypto.createHash('sha1').update(buffer).digest("hex");
-    }
-    else {
-      sha1 = crypto.createHash('sha1').update(arr).digest("hex");
+    if (!sha1) {
+      if (typeof(window) == "undefined") {
+        sha1 = crypto.createHash('sha1').update(buffer).digest("hex");
+      }
+      else {
+        sha1 = crypto.createHash('sha1').update(arr).digest("hex");
+      }
     }
     createTorrent(buffer, function onTorrent (err, torrentBuffer) {
       var torrent = parseTorrent(torrentBuffer);
