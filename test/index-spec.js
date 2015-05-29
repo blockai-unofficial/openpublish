@@ -207,22 +207,24 @@ describe("open-publish", function() {
             var blockcastTx = receipt.blockcastTx;
             var txHash = blockcastTx.txHash;
             expect(txHash).toBeDefined();
-            blockcast.scanSingle({
-              txHash: txHash,
-              getTransaction: getTransaction
-            }, function(err, message) {
-              var data = JSON.parse(message);
-              expect(data.op).toBe("r");
-              expect(data.sha1).toBe(bistoreSha1);
-              expect(data.name).toBe(randomFileName);
-              expect(data.size).toBe(randomBufferSize);
-              expect(data.type).toBe(bitstoreMimetype);
-              expect(data.uri).toBe(uri);
-              request(data.uri, function(err, res, body) {
-                expect(body).toBe(randomString);
-                done();
+            setTimeout(function() {
+              blockcast.scanSingle({
+                txHash: txHash,
+                getTransaction: getTransaction
+              }, function(err, message) {
+                var data = JSON.parse(message);
+                expect(data.op).toBe("r");
+                expect(data.sha1).toBe(bistoreSha1);
+                expect(data.name).toBe(randomFileName);
+                expect(data.size).toBe(randomBufferSize);
+                expect(data.type).toBe(bitstoreMimetype);
+                expect(data.uri).toBe(uri);
+                request(data.uri, function(err, res, body) {
+                  expect(body).toBe(randomString);
+                  done();
+                });
               });
-            });
+            }, 3000);
           });
         });
       });
