@@ -9,18 +9,131 @@
     width: 100%;
   }
 
+  #sitewrapper {
+    width: 700px;
+    margin: 0 auto;
+  }
+
   #drop {
-    height: 500px;
-    width: 500px;
-    background-color: gray;
+    height: 100px;
+    width: 100%;
+    background-color: #ddd;
+    text-align:center;
+    line-height: 100px;
+    font-family: monospace;
+    border: 1px dashed black;
+  }
+
+  #brainwallet-seed {
+    width: 395px;
+  }
+
+  #generate-wallet {
+    width: 100px;
+  }
+
+  .box {
+    margin: 20px 0;
+  }
+
+  label {
+    margin-right: 20px;
+    font-family: monospace;
+    color: #0086b3;
+  }
+
+  .data {
+    font-family: monospace;
+    border: 1px solid black;
+    width: 200px;
+    padding: 3px;
+  }
+
+  #uri {
+    white-space: nowrap;
   }
 
   </style>
 </head>
 <body>
-  <div id="drop">
-    Drop File Here
+  <div id="sitewrapper">
+    <h3>Bitcoin Wallet</h3>
+    <p>
+    The first thing we need to do is generate a <strong>Bitcoin wallet</strong>. We'll take the approach of turning a string in to a seed for a wallet generator and making what's called a <strong>brain wallet</strong>. The same passphrase will always return the same wallet. But don't think of it like a password. Anything less than a long passphrase like "red miami sixty mississippi fred jump 3478 correct battery horse staple" will be in danger of being cracked.
+    </p>
+    <div class="box">
+      <input id="brainwallet-seed" type="text" placeholder="Brainwallet seed phrase"/><button id="generate-wallet">Generate Wallet</button>
+    </div>
+
+    <script src="https://gist.github.com/williamcotton/ba3530f6f0b7bbce10a5.js"></script>
+    <div class="box">
+      <label>Wallet Address</label><span class="data" id="wallet-address">wallet-address</span>
+    </div>
+    <h2>Bitstore</h2>
+    <p>
+    Bitstore is a <strong>content-addressable</strong> cloud storage web service that uses Bitcoin public key infrastructure for authentication and payment.
+    </p>
+    <p>
+    The basic idea is that customers pay for the storage and retrieval costs of their digital media. Here at Blockai we are committed to building consumer products that never rely on advertising or selling personal data to third-party companies to cover our costs. In essence, we're building products where people own their own content and with that comes taking on financial responsibility.
+    </p>
+    <p>
+    How it works is a customer sends a small amount of Bitcoin to a deposit address provided by Bitstore and their account is immediately credited. Once their credits are in place they are free to store and retrieve media on a per-file and per-use basis. Once a customer's credits have been used up the file is no longer available for retrieval, however anyone can make a deposit to any account.
+    </p>
+    <p>If we did our math correctly it currently costs about 1/3rd of a cent to upload a photograph and distribute a 100 copies but I expect adjustments to our initial pricing mechanism. Needless to say, using Bitstore will cost very little and we don't really expect people to purchase more than a few dollars worth of credits, depending on their distribution needs.
+    </p>
+    <h4>Content-addressable</h4>
+    <p>
+    Content-addressable means that the file is referenced not by a name but by a cryptographic hash of the contents. Bitstore supports MD5, SHA-1, SHA-256 and BitTorrent Info Hash as identifiers.
+    </p>
+    <h3>Bitstore Client</h3>
+    <p>
+    On the software side of things we need to generate a <strong>Bitstore client</strong>.
+    </p>
+    <p>
+    The Bitstore client uses a Bitcoin wallet to sign tokens for identification and to authorize with the Bitstore servers. In effect your Bitcoin wallet address is your ID.
+    </p>
+    <script src="https://gist.github.com/williamcotton/aeaf8b9b4f3dcd509a83.js"></script>
+    <div class="box">
+      <button id="generate-bitstore-client">Generate Bitstore Client</button>
+    </div>
+    <div class="box">
+      <label>Bitstore Deposit Address</label><span class="data" id="bitstore-deposit-address">bitstore-deposit-address</span>
+    </div>
+    <div class="box">
+      <label>Bitstore Balance</label><span class="data" id="bitstore-balance">bitstore-balance</span>
+    </div>
+    <div id="no-coin">
+      <h4>Send Bitcoin to Bitstore Deposit Address</h4>
+      <p>
+      Bitstore is a pay-per-use, per-file service and needs Bitcoin in order to operate.
+      </p>
+      <p>
+      There are a number of testnet faucets like this at <a href='http://bitcoinfaucet.uo1.net/send.php'>bitcoinfaucet.uo1.net</a>. Use your Bitstore Deposit Address with one of these faucets and top up your balance.
+      </p>
+    </div>
+    <h3>Upload file to Bitstore</h3>
+    <p>
+    Once your Bitstore account has some credits you can start uploading files. The browser client has a convenient interface that pairs well with this drag-drop module on npm.
+    </p>
+    <script src="https://gist.github.com/williamcotton/335f06aec028272eefa1.js"></script>
+    <div id="drop">
+      Drop File Here
+    </div>
+    </script>
+    <div class="box">
+      <label>File SHA-1</label><span class="data" id="hash_sha1">hash_sha1</span>
+    </div>
+    <div class="box">
+      <label>File BitTorrent InfoHash</label><span class="data" id="hash_btih">hash_btih</span>
+    </div>
+    <div class="box">
+      <label>File URI</label><span class="data" id="uri">uri</span>
+    </div>
+    <div class="box">
+      <label>File size</label><span class="data" id="size">size</span>
+    </div>
   </div>
+
   <script src="build.js" type="text/javascript" charset="utf-8"></script>
 </body>
 </html>
