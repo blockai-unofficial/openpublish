@@ -16,6 +16,7 @@ var register = function(options, callback) {
   var propagateTransaction = options.propagateTransaction;
   var propagationStatus = options.propagationStatus;
   var signTransaction = options.signTransaction;
+  var signTransactionHex = options.signTransactionHex;
   var sha1 = options.sha1;
   var reader = new FileReader();
   reader.addEventListener('load', function (e) {
@@ -51,7 +52,8 @@ var register = function(options, callback) {
         unspentOutputs: unspentOutputs,
         propagateTransaction: propagateTransaction,
         propagationStatus: propagationStatus,
-        signTransaction: signTransaction
+        signTransaction: signTransaction,
+        signTransactionHex: signTransactionHex
       }, function(error, blockcastTx) {
         var receipt = {
           data: data,
