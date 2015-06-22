@@ -3,6 +3,7 @@ var parseTorrent = require('parse-torrent');
 var magnet = require('magnet-uri');
 var crypto = require("crypto");
 var blockcast = require("blockcast");
+var opentip = require("./opentip");
 
 var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader");
 
@@ -46,7 +47,6 @@ var register = function(options, callback) {
         keywords: keywords
       };
       var dataJSON = JSON.stringify(data);
-      console.log(dataJSON, address, unspentOutputs, propagateTransaction, propagationStatus, signTransaction, signTransactionHex);
       blockcast.post({
         data: dataJSON,
         address: address,
@@ -67,8 +67,75 @@ var register = function(options, callback) {
   reader.readAsArrayBuffer(file);
 };
 
+var scanSingle = function(options, callback) {
+
+  var opentipScan = function(blockcastErr) {
+    opentip.scanSingle(options, function(err, tip) {
+      if (tip) {
+        callback(false, tip)
+      }
+      else {
+        callback(blockcastErr, false);
+      }
+    });
+  }
+
+  blockcast.scanSingle(options, function(err, message) {
+    if (err || !message) {
+      return opentipScan(err);
+    }
+    try {
+      var data = JSON.parse(message);
+      if (data.op = "r") {
+        callback(false, data);
+      }
+      else {
+        return opentipScan(false);
+      }
+    }
+    catch(e) {
+      return opentipScan(e);
+    }
+  });
+
+
+};
+
+var tip = function(options, callback) {
+  var propagateTransaction = options.propagateTransaction;
+  if (options.sha1) {
+    options.openpublishSha1 = options.sha1;
+  }
+  if (options.amount) {
+    options.tipAmount = options.amount;
+  }
+  if (options.destination) {
+    options.tipDestinationAddress = options.destination;
+  }
+  opentip.create(options, function(err, signedTxHex, txHash) {
+    var propagateResponse = function(err, res) {
+      var tipTx = {
+        openpublishSha1: options.openpublishSha1,
+        tipDestinationAddress: options.tipDestinationAddress,
+        tipAmount: options.tipAmount,
+        txHash: txHash
+      }
+      if (err) {
+        tipTx.propagateResponse = "failure";
+      }
+      else {
+        tipTx.propagateResponse = "success";
+      }
+      callback(err, tipTx);
+    }
+    propagateTransaction(signedTxHex, propagateResponse);
+  });
+};
+
 var OpenPublish = {
-  register: register
+  register: register,
+  tip: tip,
+  scanSingle: scanSingle
 };
 
 module.exports = OpenPublish;

@@ -1,6 +1,6 @@
 jasmine.getEnv().defaultTimeoutInterval = 50000;
 
-var OpenPublish = require("../src/index");
+var openpublish = require("../src/index");
 
 var Bitcoin = require("bitcoinjs-lib");
 var Chain = require("chain-node");
@@ -41,6 +41,8 @@ var chain = new Chain({
 var address = "n3PDRtKoHXHNt8FU17Uu9Te81AnKLa7oyU";
 var privateKeyWIF = "KyjhazeX7mXpHedQsKMuGh56o3rh8hm8FGhU3H6HPqfP9pA4YeoS";
 
+var sha1 = "dc724af18fbdd4e59189f5fe768a5f8311527050";
+
 var bitstore = require('bitstore')({
   privateKey: privateKeyWIF,
   network: 'testnet'
@@ -75,9 +77,13 @@ var getTransaction = function(txHash, callback) {
     var rawInputs = rawTx.inputs;
     var outputs = [];
     rawOutputs.forEach(function(rawOutput) {
+      var address = rawOutput.addresses ? rawOutput.addresses[0] : false;
       outputs.push({
+        type: rawOutput.script_type,
+        address: address,
         scriptPubKey: rawOutput.script_hex,
-        nextTxHash: rawOutput.spending_transaction
+        nextTxHash: rawOutput.spending_transaction,
+        value: rawOutput.value
       });
     });
     var inputs = [];
@@ -132,7 +138,7 @@ describe("open-publish", function() {
 
   it("should publish a small text file", function(done) {
     getUnspentOutputs(address, function(err, unspentOutputs) {
-      OpenPublish.register({
+      openpublish.register({
         file: file,
         title: fileTitle,
         keywords: fileKeywords,
@@ -161,11 +167,10 @@ describe("open-publish", function() {
 
   it("should find an open publish transaction", function(done) {
     var txHash = "03af5bf0b3fe25db04b684ab41bea8cdd127e57822602b8545beaf06685967c8";
-    blockcast.scanSingle({
+    openpublish.scanSingle({
       txHash: txHash,
       getTransaction: getTransaction
-    }, function(err, message) {
-      var data = JSON.parse(message);
+    }, function(err, data) {
       expect(data.op).toBe("r");
       expect(data.btih).toBe(fileBtih);
       expect(data.sha1).toBe(fileSha1);
@@ -196,7 +201,7 @@ describe("open-publish", function() {
         expect(uri).toBeDefined();
         getUnspentOutputs(address, function(err, unspentOutputs) {
           randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
-          OpenPublish.register({
+          openpublish.register({
             uri: uri,
             file: randomFile,
             address: address,
@@ -230,4 +235,41 @@ describe("open-publish", function() {
       });
     });
   });
+
+  it("should tip an openpublish document", function(done) {
+    var amount = 20000;
+    var destination = "mqMsBiNtGJdwdhKr12TqyRNE7RTvEeAkaR";
+    getUnspentOutputs(address, function(err, unspentOutputs) {
+      openpublish.tip({
+        destination: destination,
+        sha1: sha1,
+        address: address,
+        amount: amount,
+        unspentOutputs: unspentOutputs,
+        propagateTransaction: propagateTransaction,
+        signTransaction: signTransaction
+      }, function(error, tipTx) {
+        expect(tipTx.tipDestinationAddress).toBe(destination);
+        expect(tipTx.openpublishSha1).toBe(sha1);
+        expect(tipTx.tipAmount).toBe(amount);
+        expect(tipTx.txHash).toBeDefined();
+        expect(tipTx.propagateResponse).toBe('success');
+        done();
+      });
+    });
+  });
+
+  it("should scan an opentip", function(done) {
+    var txHash = "7235a656b4f3e578e00c9980d4ea868d8de89a8616e019ccf68db9f0c1d1a6ff";
+    openpublish.scanSingle({
+      txHash:txHash,
+      getTransaction: getTransaction
+    }, function(err, tip) {
+      expect(tip.openpublishSha1).toBe(sha1);
+      expect(tip.tipAmount).toBe(20000);
+      expect(tip.tipDestinationAddresses[0]).toBe("mqMsBiNtGJdwdhKr12TqyRNE7RTvEeAkaR");
+      done();
+    });
+  });
+
 });
