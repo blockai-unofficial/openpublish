@@ -7,8 +7,9 @@
     "test": "npm test"
   },
   "dependencies": {
+    "async": "^1.2.1",
     "bitcoinjs-lib": "^1.5.7",
-    "bitstore": "0.0.2",
+    "bitstore": "0.0.4",
     "blockcast": "^0.1.1",
     "create-torrent": "^3.10.3",
     "filereader": "^0.10.3",
@@ -28,9 +29,9 @@
   },
   "scripts": {
     "test": "jasmine-node test/ --forceexit --verbose --captureExceptions",
-    "build-dev": "watchify test/browser-index.js -o test/build.js -t reactify -d -v",
+    "build-dev": "watchify test/browser-index.js -o test/article-build.js -t reactify -d -v",
     "test-dev": "source .env && ./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions",
-    "watch": "nodemon --exec make --ignore test/build.js"
+    "watch": "nodemon --exec make --ignore test/article-build.js"
   },
   "repository": {
     "type": "git",

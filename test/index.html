@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Test File Drop</title>
+  <title>Introducing Bitstore and Open Publish</title>
   <style type="text/css">
 
   body {
@@ -32,8 +32,12 @@
     width: 100px;
   }
 
+  .warning {
+    font-size: 0.8em;
+  }
+
   .box {
-    margin: 20px 0;
+    margin: 40px 0;
   }
 
   label {
@@ -47,27 +51,82 @@
     border: 1px solid black;
     width: 200px;
     padding: 3px;
+    color: #df5000;
   }
 
   #uri {
     white-space: nowrap;
   }
 
+  .json-view textarea {
+    width: 100%;
+    height: 300px;
+  }
+
   </style>
 </head>
 <body>
   <div id="sitewrapper">
+    <h1>Introducing Bitstore and Open Publish</h1>
+    <p>
+    This is a first in a series of articles about two pieces of technology that we've created at Blockai, Bitstore and Open Publish.
+    </p>
+    <p>
+    With <strong>Open Publish</strong> we want to give ownership of digital media back to the individual and allow them to create contracts for licensing and micropayment channels using Bitcoin as a currency. Think combining BlockSign, OpenAssets and a royalty payment mechanism.
+    </p>
+    <p>
+    Like BlockSign, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with Bittorrent and Webtorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain. 
+    </p>
+    <p>
+    A private service we've created called <strong>Bitstore</strong> is dedicated to distribution and to permanently store and seed media over HTTP and on various torrent networks. Bitstore is a paid-only service that uses Bitcoin. Customers authenticate themselves with Bitcoin public-key infrastructure and cover their own hosting and distribution costs.
+    </p>
+    <p>
+    While Bitstore and Open Publish are natural compliments they are not dependent on each other. Media can be hosted on Bitstore and not registered as an Open Publish asset. At the same time Bitstore is not required by Open Publish as media can be hosted by any private third-party service.
+    </p>
+    <p>We'll get things started with a quick overview of how to create a wallet and the basics of developing Bitcoin software.
+    </p>
+    <p>
+    Most of the interactions are dependent on previous steps, so make sure you go through everything in order!
+    </p>
     <h3>Bitcoin Wallet</h3>
     <p>
-    The first thing we need to do is generate a <strong>Bitcoin wallet</strong>. We'll take the approach of turning a string in to a seed for a wallet generator and making what's called a <strong>brain wallet</strong>. The same passphrase will always return the same wallet. But don't think of it like a password. Anything less than a long passphrase like "red miami sixty mississippi fred jump 3478 correct battery horse staple" will be in danger of being cracked.
+    The first thing we need to do is generate a <strong>Bitcoin wallet</strong>. 
+    </p>
+    <p>
+    We can generate a wallet with a long passphrase. This is known as a <strong>brain wallet</strong>. The same passphrase will always return the same wallet. This is convienient for our demonstration but impractical in use with actual Bitcoin.
     </p>
     <div class="box">
       <input id="brainwallet-seed" type="text" placeholder="Brainwallet seed phrase"/><button id="generate-wallet">Generate Wallet</button>
     </div>
 
     <script src="https://gist.github.com/williamcotton/ba3530f6f0b7bbce10a5.js"></script>
+    <p class="warning">
+    Brain wallets, like passwords, are not by themselves a reliable part of self-authentication. Third-party services and physical devices are helpful in the the process of key management.
+    </p>
     <div class="box">
       <label>Wallet Address</label><span class="data" id="wallet-address">wallet-address</span>
+    </div>
+    <p>
+    By itself a bitcoin wallet is just a private key and a public key. All of the information about the state of the wallet is stored in the public blockchain and is accessible from a number of open blockchain APIs.
+    </p>
+    <script src="https://gist.github.com/williamcotton/73eb5d2f856611434b3f.js"></script>
+    <div class="box">
+      <button id="get-wallet">Get Wallet</button>
+    </div>
+    <div class="box">
+      <label>Balance</label><span class="data" id="balance">balance</span>
+    </div>
+    <div id="no-coin">
+      <h4>Send Bitcoin to Wallet</h4>
+      <p>
+      There are a number of testnet faucets like this at <a href='http://bitcoinfaucet.uo1.net/send.php'>bitcoinfaucet.uo1.net</a> or <a href='https://testnet-faucet.elementsproject.org/'>testnet-faucet.elementsproject.org</a>. Use the above Wallet Address with one of these faucets and send yourself some testnet coin.
+      </p>
+      <p>
+      When you've done that, click on "Get Wallet" again to refresh you balance.
+      </p>
+      <p>
+      Sometimes it can take a little while for testnet transactions to post and your balance to update.
+      </p>
     </div>
     <h2>Bitstore</h2>
     <p>
@@ -84,6 +143,9 @@
     <h4>Content-addressable</h4>
     <p>
     Content-addressable means that the file is referenced not by a name but by a cryptographic hash of the contents. Bitstore supports MD5, SHA-1, SHA-256 and BitTorrent Info Hash as identifiers.
+    </p>
+    <p>
+    Every digital file has a unique hash. Think of it like a fingerprint. If any of the bits in the file change, the fingerprint changes. This property is great for tracking different versions of files and is employed by revision control systems like git.
     </p>
     <h3>Bitstore Client</h3>
     <p>
@@ -103,13 +165,52 @@
       <label>Bitstore Balance</label><span class="data" id="bitstore-balance">bitstore-balance</span>
     </div>
     <div id="no-coin">
-      <h4>Send Bitcoin to Bitstore Deposit Address</h4>
+      <h3>Send Bitcoin to Bitstore Deposit Address</h4>
       <p>
       Bitstore is a pay-per-use, per-file service and needs Bitcoin in order to operate.
       </p>
       <p>
-      There are a number of testnet faucets like this at <a href='http://bitcoinfaucet.uo1.net/send.php'>bitcoinfaucet.uo1.net</a>. Use your Bitstore Deposit Address with one of these faucets and top up your balance.
+      We need to send some Bitcoin from our brain wallet to the Bitstore deposit address in order to top up our balance.
       </p>
+      <p>
+      We're going to build and post our own Bitcoin transaction.
+      </p>
+      <p>
+      First we need to query the a public blockchain API for a list of all the <strong>unspent outputs</strong> for our wallet. These unspent outputs represent all the Bitcoin that was sent to our wallet. We'll use them to build our own transaction.
+      </p>
+      <script src="https://gist.github.com/williamcotton/6e15676e7084cfb92da9.js"></script>
+      <div class="box">
+        <button id="get-unspents">Get Unspent Outputs</button>
+      </div>
+      <div class="json-view">
+        <textarea id="unspent-outputs-json"></textarea>
+      </div>
+      <p>
+      Here our values are listed in integer value units of Bitcoin known as satoshi. There are 100,000,000 satoshi in a single bitcoin. Taking the sum of all the values of our unspent outputs is how we compute the balance of our wallet.
+      </p>
+      <p>
+      We need to use this unspent outputs in order to create and sign our own transactions. We can examine the details of how a transaction is created in more detail at a later time.
+      </p>
+      <script src="https://gist.github.com/williamcotton/94609c7a1f88d11ef21b.js"></script>
+      <div class="box">
+        <button id="create-transaction">Create Transaction</button>
+      </div>
+      <div class="json-view">
+        <textarea id="new-tx-json"></textarea>
+      </div>
+      <p>
+      Now that we have our transaction we need to sign and post it to a public bitcoin node.
+      </p>
+      <p>
+      We convert our signed transaction to the hex byte code representation supported by bitcoind.
+      </p>
+      <script src="https://gist.github.com/williamcotton/fb1aee125c4a90bab9f5.js"></script>
+      <div class="box">
+        <button id="sign-and-post-transaction">Sign and Post Transaction</button>
+      </div>
+      <div class="json-view">
+        <textarea id="post-transaction-receipt-json"></textarea>
+      </div>
     </div>
     <h3>Upload file to Bitstore</h3>
     <p>
@@ -132,8 +233,78 @@
     <div class="box">
       <label>File size</label><span class="data" id="size">size</span>
     </div>
+    <h2>Open Publish</h2>
+    <p>
+    Now that we've handled hosting and distribution for our media we're ready to register with the <strong>Open Publish</strong> protocol and claim ownership over a <strong>digital asset</strong> that we're using in our products to represent a limited and non-exclusive copyright of this document.
+    </p>
+    <p>
+    Any honest third-party software can read the state of ownership from the Bitcoin blockchain and create software that directs payments to the legitimate owners of the content in the form of direct tips, monthly subscriptions or various synchronization licenses modeled on existing intellectual property systems.
+    </p>
+    <p>
+    For example, we could write software that displays media with a consumer Bitcoin wallet allowing for people to easily and directly tip the rights-holders.
+    <p>
+    It assumes that the wallet address that posted the Open Publish registration transaction to the Bitcoin blockchain is controlled by the owner of the registered media.
+    </p>
+    <!--
+    <h4>Digital assets</h4>
+    <p>
+    Open Publish is a simple open source <a href="https://en.bitcoin.it/wiki/Colored_Coins">colored coin</a> protocol similar in functionality to Open Assets.
+    <p>
+    In addition to registering media the Open Publish protocol allows for transfering part ownership, although this functionality is still in development.
+    </p>
+    -->
+    <h3>Posting an Open Publish transaction to the Bitcoin network</h3>
+    <p>
+    Open Publish is not dependent on Bitstore. Hosting and distribution of content is not the goal of Open Publish although an optional link to the content can be part of the metadata.
+    </p>
+    <script src="https://gist.github.com/williamcotton/79b0e76e3e3842867dd9.js"></script>
+    <div class="box">
+      <button id="open-publish-file">Open Publish File</button>
+    </div>
+    <div class="json-view">
+      <textarea id="open-publish-receipt-json"></textarea>
+    </div>
+    <p>
+    <!--
+    <h3>Payment Streams with Open Tip</h3>
+    <p>
+    The Blockai website reads the Bitcoin blockchain and displays media that was registered with Open Publish.
+    </p>
+    -->
+    <h4>Public stream</h4>
+    <p>
+    Open Publish transactions are native Bitcoin transactions. This means they are broadcast and stored on all nodes in the Bitcoin network. Anyone can freely stream, read, and write their own Open Publish transactions in same equal-access manner as native Bitcoin transactions. Open Publish takes advantage of the unique distributed yet single-source-of-truth nature of the Bitcoin blockchain.
+    </p>
+    <p>
+    What this means is that neither Blockai nor any other private entity is required to register with Open Publish.
+    </p>
+    <p>
+    Here we're scanning for a list of Open Published documents for our wallet. Open Publish uses the Blockcast protocol to embed data in the blockchain.
+    </p>
+    <script src="https://gist.github.com/williamcotton/a343c94c89658823bd0c.js"></script>
+    <div class="box">
+      <button id="scan-address">Scan For Open Publish Documents</button>
+    </div>
+    <div class="json-view">
+      <textarea id="open-publish-transactions"></textarea>
+    </div>
+    <p>
+    There's a lot more to discuss with both Bitstore and Open Publish, as well as how we're using these technologies to create products for consumers and publishers of digital media, but we'll leave the rest for future articles.
+    </p>
+    <p>
+    If you're interested in what we're working on, please get in touch.
+    </p>
+    <p>
+    We're currently hiring so send in a resume if you're as passionate about this kind of stuff as we are!
+    </p>
+    <p>
+    William Cotton, CTO Blockai
+    </p>
+    <p>
+    <a href="mailto:william@blockai.com">william@blockai.com</a>
+    </p>
   </div>
 
-  <script src="build.js" type="text/javascript" charset="utf-8"></script>
+  <script src="/article-build.js" type="text/javascript" charset="utf-8"></script>
 </body>
 </html>

@@ -46,6 +46,7 @@ var register = function(options, callback) {
         keywords: keywords
       };
       var dataJSON = JSON.stringify(data);
+      console.log(dataJSON, address, unspentOutputs, propagateTransaction, propagationStatus, signTransaction, signTransactionHex);
       blockcast.post({
         data: dataJSON,
         address: address,

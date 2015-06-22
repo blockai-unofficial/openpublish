@@ -1,7 +1,7 @@
-all: test/build.js
+all: test/article-build.js
 
 clean_js:
-	rm -f test/build.js
+	rm -f test/article-build.js
 
-test/build.js: clean_js
+test/article-build.js: clean_js
 	./node_modules/.bin/browserify test/browser-index.js -t reactify > $@
