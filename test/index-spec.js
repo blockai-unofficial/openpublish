@@ -19,9 +19,7 @@ if (process.env.CHAIN_API_KEY_ID && process.env.CHAIN_API_KEY_SECRET) {
   });
 }
 else {
-  commonBlockchain = require("abstract-common-blockchain")({
-    type: "local"
-  });
+  commonBlockchain = require("mem-common-blockchain")();
 }
 
 var createRandomString = function(length) {
@@ -124,21 +122,37 @@ describe("open-publish", function() {
   });
 
   it("should find an open publish transaction", function(done) {
-    var txid = "03af5bf0b3fe25db04b684ab41bea8cdd127e57822602b8545beaf06685967c8";
-    openpublish.scanSingle({
-      txid: txid,
+
+    openpublish.register({
+      file: file,
+      title: fileTitle,
+      keywords: fileKeywords,
+      name: fileName,
+      sha1: fileSha1,
+      btih: fileBtih,
+      size: fileBuffer.legnth,
+      type: fileType,
+      commonWallet: commonWallet,
       commonBlockchain: commonBlockchain
-    }, function(err, data) {
-      expect(data.op).toBe("r");
-      expect(data.btih).toBe(fileBtih);
-      expect(data.sha1).toBe(fileSha1);
-      expect(data.name).toBe(fileName);
-      expect(data.size).toBe(fileBuffer.length);
-      expect(data.type).toBe(fileType);
-      expect(data.title).toBe(fileTitle);
-      expect(data.uri).not.toBeDefined();
-      expect(data.keywords).toBe(fileKeywords);
-      done();
+    }, function(err, receipt) {
+      //console.log(err, receipt);
+      var blockcastTx = receipt.blockcastTx;
+      var txid = blockcastTx.txid;
+      openpublish.scanSingle({
+        txid: txid,
+        commonBlockchain: commonBlockchain
+      }, function(err, data) {
+        expect(data.op).toBe("r");
+        expect(data.btih).toBe(fileBtih);
+        expect(data.sha1).toBe(fileSha1);
+        expect(data.name).toBe(fileName);
+        expect(data.size).toBe(fileBuffer.length);
+        expect(data.type).toBe(fileType);
+        expect(data.title).toBe(fileTitle);
+        expect(data.uri).not.toBeDefined();
+        expect(data.keywords).toBe(fileKeywords);
+        done();
+      });
     });
   });
 
