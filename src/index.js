@@ -12,13 +12,10 @@ var register = function(options, callback) {
   var keywords = options.keywords;
   var title = options.title;
   var uri = options.uri;
-  var address = options.address;
-  var unspentOutputs = options.unspentOutputs;
-  var propagateTransaction = options.propagateTransaction;
   var propagationStatus = options.propagationStatus;
-  var signTransaction = options.signTransaction;
-  var signTransactionHex = options.signTransactionHex;
   var sha1 = options.sha1;
+  var commonBlockchain = options.commonBlockchain;
+  var commonWallet = options.commonWallet;
   var reader = new FileReader();
   reader.addEventListener('load', function (e) {
     var arr = new Uint8Array(e.target.result);
@@ -49,12 +46,9 @@ var register = function(options, callback) {
       var dataJSON = JSON.stringify(data);
       blockcast.post({
         data: dataJSON,
-        address: address,
-        unspentOutputs: unspentOutputs,
-        propagateTransaction: propagateTransaction,
+        commonWallet: commonWallet,
+        commonBlockchain: commonBlockchain,
         propagationStatus: propagationStatus,
-        signTransaction: signTransaction,
-        signTransactionHex: signTransactionHex
       }, function(error, blockcastTx) {
         var receipt = {
           data: data,
@@ -102,7 +96,7 @@ var scanSingle = function(options, callback) {
 };
 
 var tip = function(options, callback) {
-  var propagateTransaction = options.propagateTransaction;
+  var commonBlockchain = options.commonBlockchain;
   if (options.sha1) {
     options.openpublishSha1 = options.sha1;
   }
@@ -112,13 +106,13 @@ var tip = function(options, callback) {
   if (options.destination) {
     options.tipDestinationAddress = options.destination;
   }
-  opentip.create(options, function(err, signedTxHex, txHash) {
+  opentip.create(options, function(err, signedTxHex, txid) {
     var propagateResponse = function(err, res) {
       var tipTx = {
         openpublishSha1: options.openpublishSha1,
         tipDestinationAddress: options.tipDestinationAddress,
         tipAmount: options.tipAmount,
-        txHash: txHash
+        txid: txid
       }
       if (err) {
         tipTx.propagateResponse = "failure";
@@ -128,7 +122,7 @@ var tip = function(options, callback) {
       }
       callback(err, tipTx);
     }
-    propagateTransaction(signedTxHex, propagateResponse);
+    commonBlockchain.Transactions.Propagate(signedTxHex, propagateResponse);
   });
 };
 

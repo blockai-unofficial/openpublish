@@ -2,13 +2,27 @@ jasmine.getEnv().defaultTimeoutInterval = 50000;
 
 var openpublish = require("../src/index");
 
-var Bitcoin = require("bitcoinjs-lib");
-var Chain = require("chain-node");
+var bitcoin = require("bitcoinjs-lib");
 var File = require("file-api").File;
 var blockcast = require("blockcast");
 var fs = require('fs');
 var crypto = require("crypto");
 var request = require("request");
+
+var commonBlockchain;
+if (process.env.CHAIN_API_KEY_ID && process.env.CHAIN_API_KEY_SECRET) {
+  var ChainAPI = require("chain-unofficial");
+  commonBlockchain = ChainAPI({
+    network: "testnet", 
+    key: process.env.CHAIN_API_KEY_ID, 
+    secret: process.env.CHAIN_API_KEY_SECRET
+  });
+}
+else {
+  commonBlockchain = require("abstract-common-blockchain")({
+    type: "local"
+  });
+}
 
 var createRandomString = function(length) {
   var characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
@@ -29,15 +43,6 @@ var createRandomFile = function(options, callback) {
   });
 };
 
-var CHAIN_API_KEY_ID = process.env.CHAIN_API_KEY_ID;
-var CHAIN_API_KEY_SECRET = process.env.CHAIN_API_KEY_SECRET;
-
-var chain = new Chain({
-  keyId: CHAIN_API_KEY_ID,
-  keySecret: CHAIN_API_KEY_SECRET,
-  blockChain: 'testnet3'
-});
-
 var address = "n3PDRtKoHXHNt8FU17Uu9Te81AnKLa7oyU";
 var privateKeyWIF = "KyjhazeX7mXpHedQsKMuGh56o3rh8hm8FGhU3H6HPqfP9pA4YeoS";
 
@@ -49,76 +54,22 @@ var bitstore = require('bitstore')({
 });
 
 var signFromPrivateKeyWIF = function(privateKeyWIF) {
-  return function(tx, callback) {
-    var key = Bitcoin.ECKey.fromWIF(privateKeyWIF);
+  return function(txHex, callback) {
+    var tx = bitcoin.Transaction.fromHex(txHex);
+    var key = bitcoin.ECKey.fromWIF(privateKeyWIF);
     tx.sign(0, key); 
-    callback(false, tx);
+    var txid = tx.getId();
+    var signedTxHex = tx.toHex();
+    callback(false, signedTxHex, txid);
   }
 };
 
-var signTransaction = signFromPrivateKeyWIF(privateKeyWIF);
+var signRawTransaction = signFromPrivateKeyWIF(privateKeyWIF);
 
-var signMessageBase64 = function (message, callback) {
-  var key = bitcoin.ECKey.fromWIF(privateKeyWIF);
-  var network = bitcoin.networks.testnet;
-  callback(false, bitcoin.Message.sign(key, message, network).toString('base64'));
+var commonWallet = {
+  signRawTransaction: signRawTransaction,
+  address: address
 }
-
-var propagateTransaction = function(transactionHex, callback) {
-  chain.sendTransaction(transactionHex, function(err, resp) {
-    callback(err, resp);
-  });
-};
-
-var getTransaction = function(txHash, callback) {
-  chain.getTransaction(txHash, function(err, resp) {
-    var rawTx = resp;
-    var rawOutputs = rawTx.outputs;
-    var rawInputs = rawTx.inputs;
-    var outputs = [];
-    rawOutputs.forEach(function(rawOutput) {
-      var address = rawOutput.addresses ? rawOutput.addresses[0] : false;
-      outputs.push({
-        type: rawOutput.script_type,
-        address: address,
-        scriptPubKey: rawOutput.script_hex,
-        nextTxHash: rawOutput.spending_transaction,
-        value: rawOutput.value
-      });
-    });
-    var inputs = [];
-    rawInputs.forEach(function(rawInput) {
-      inputs.push({
-        address: rawInput.addresses[0]
-      });
-    });
-    var transaction = {
-      inputs: inputs,
-      outputs: outputs
-    }
-    callback(err, transaction);
-  });
-};
-
-var getUnspentOutputs = function(address, callback) {
-  chain.getAddressUnspents(address, function(err, resp) {
-    var rawUnspentOutputs = resp;
-    var unspentOutputs = [];
-    for (var i = 0; i < rawUnspentOutputs.length; i++) {
-      var rawUnspentOutput = rawUnspentOutputs[i];
-      var unspentOutput = {
-        txHash: rawUnspentOutput.transaction_hash,
-        value: rawUnspentOutput.value,
-        index: rawUnspentOutput.output_index,
-        address: address,
-        confirmations: rawUnspentOutput.confirmations,
-        scriptPubKey: rawUnspentOutput.script_hex
-      };
-      unspentOutputs.push(unspentOutput);
-    }
-    callback(false, unspentOutputs);
-  });
-};
 
 describe("open-publish", function() {
 
@@ -130,6 +81,17 @@ describe("open-publish", function() {
   var fileBtih = "335400c43179bb1ad0085289e4e60c0574e6252e";
   var fileSha1 = "dc724af18fbdd4e59189f5fe768a5f8311527050";
 
+  var testData0 = {
+    op: "r",
+    btih: fileBtih,
+    sha1: fileSha1,
+    name: fileName,
+    size: fileBuffer.length,
+    type: fileType,
+    title: fileTitle,
+    keywords: fileKeywords
+  }
+
   var file = new File({ 
     name: fileName,
     type: fileType,
@@ -137,39 +99,35 @@ describe("open-publish", function() {
   });
 
   it("should publish a small text file", function(done) {
-    getUnspentOutputs(address, function(err, unspentOutputs) {
-      openpublish.register({
-        file: file,
-        title: fileTitle,
-        keywords: fileKeywords,
-        address: address,
-        unspentOutputs: unspentOutputs,
-        signTransaction: signTransaction,
-        propagateTransaction: propagateTransaction
-      }, function(err, receipt) {
-        var data = receipt.data;
-        expect(data.op).toBe("r");
-        expect(data.btih).toBe(fileBtih);
-        expect(data.sha1).toBe(fileSha1);
-        expect(data.name).toBe(fileName);
-        expect(data.size).toBe(fileBuffer.length);
-        expect(data.type).toBe(fileType);
-        expect(data.title).toBe(fileTitle);
-        expect(data.uri).not.toBeDefined();
-        expect(data.keywords).toBe(fileKeywords);
-        var blockcastTx = receipt.blockcastTx;
-        expect(blockcastTx.txHash).toBeDefined();
-        expect(blockcastTx.transactionTotal).toBe(5);
-        done();
-      });
+    openpublish.register({
+      file: file,
+      title: fileTitle,
+      keywords: fileKeywords,
+      commonWallet: commonWallet,
+      commonBlockchain: commonBlockchain
+    }, function(err, receipt) {
+      var data = receipt.data;
+      expect(data.op).toBe("r");
+      expect(data.btih).toBe(fileBtih);
+      expect(data.sha1).toBe(fileSha1);
+      expect(data.name).toBe(fileName);
+      expect(data.size).toBe(fileBuffer.length);
+      expect(data.type).toBe(fileType);
+      expect(data.title).toBe(fileTitle);
+      expect(data.uri).not.toBeDefined();
+      expect(data.keywords).toBe(fileKeywords);
+      var blockcastTx = receipt.blockcastTx;
+      expect(blockcastTx.txid).toBeDefined();
+      expect(blockcastTx.transactionTotal).toBe(5);
+      done();
     });
   });
 
   it("should find an open publish transaction", function(done) {
-    var txHash = "03af5bf0b3fe25db04b684ab41bea8cdd127e57822602b8545beaf06685967c8";
+    var txid = "03af5bf0b3fe25db04b684ab41bea8cdd127e57822602b8545beaf06685967c8";
     openpublish.scanSingle({
-      txHash: txHash,
-      getTransaction: getTransaction
+      txid: txid,
+      commonBlockchain: commonBlockchain
     }, function(err, data) {
       expect(data.op).toBe("r");
       expect(data.btih).toBe(fileBtih);
@@ -199,38 +157,35 @@ describe("open-publish", function() {
         expect(receipt.mimetype).toBe('text/plain');
         expect(receipt.filename).toBe(randomFileName);
         expect(uri).toBeDefined();
-        getUnspentOutputs(address, function(err, unspentOutputs) {
-          randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
-          openpublish.register({
-            uri: uri,
-            file: randomFile,
-            address: address,
-            unspentOutputs: unspentOutputs,
-            signTransaction: signTransaction,
-            propagateTransaction: propagateTransaction
-          }, function(err, receipt) {
-            var blockcastTx = receipt.blockcastTx;
-            var txHash = blockcastTx.txHash;
-            expect(txHash).toBeDefined();
-            setTimeout(function() {
-              blockcast.scanSingle({
-                txHash: txHash,
-                getTransaction: getTransaction
-              }, function(err, message) {
-                var data = JSON.parse(message);
-                expect(data.op).toBe("r");
-                expect(data.sha1).toBe(bistoreSha1);
-                expect(data.name).toBe(randomFileName);
-                expect(data.size).toBe(randomBufferSize);
-                expect(data.type).toBe(bitstoreMimetype);
-                expect(data.uri).toBe(uri);
-                request(data.uri, function(err, res, body) {
-                  expect(body).toBe(randomString);
-                  done();
-                });
+        // update
+        randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
+        openpublish.register({
+          uri: uri,
+          file: randomFile,
+          commonWallet: commonWallet,
+          commonBlockchain: commonBlockchain
+        }, function(err, receipt) {
+          var blockcastTx = receipt.blockcastTx;
+          var txid = blockcastTx.txid;
+          expect(txid).toBeDefined();
+          setTimeout(function() {
+            blockcast.scanSingle({
+              txid: txid,
+              commonBlockchain: commonBlockchain
+            }, function(err, message) {
+              var data = JSON.parse(message);
+              expect(data.op).toBe("r");
+              expect(data.sha1).toBe(bistoreSha1);
+              expect(data.name).toBe(randomFileName);
+              expect(data.size).toBe(randomBufferSize);
+              expect(data.type).toBe(bitstoreMimetype);
+              expect(data.uri).toBe(uri);
+              request(uri, function(err, res, body) {
+                expect(body).toBe(randomString);
+                done();
               });
-            }, 3000);
-          });
+            });
+          }, 3000);
         });
       });
     });
@@ -239,31 +194,27 @@ describe("open-publish", function() {
   it("should tip an openpublish document", function(done) {
     var amount = 20000;
     var destination = "mqMsBiNtGJdwdhKr12TqyRNE7RTvEeAkaR";
-    getUnspentOutputs(address, function(err, unspentOutputs) {
-      openpublish.tip({
-        destination: destination,
-        sha1: sha1,
-        address: address,
-        amount: amount,
-        unspentOutputs: unspentOutputs,
-        propagateTransaction: propagateTransaction,
-        signTransaction: signTransaction
-      }, function(error, tipTx) {
-        expect(tipTx.tipDestinationAddress).toBe(destination);
-        expect(tipTx.openpublishSha1).toBe(sha1);
-        expect(tipTx.tipAmount).toBe(amount);
-        expect(tipTx.txHash).toBeDefined();
-        expect(tipTx.propagateResponse).toBe('success');
-        done();
-      });
+    openpublish.tip({
+      destination: destination,
+      sha1: sha1,
+      amount: amount,
+      commonWallet: commonWallet,
+      commonBlockchain: commonBlockchain
+    }, function(error, tipTx) {
+      expect(tipTx.tipDestinationAddress).toBe(destination);
+      expect(tipTx.openpublishSha1).toBe(sha1);
+      expect(tipTx.tipAmount).toBe(amount);
+      expect(tipTx.txid).toBeDefined();
+      expect(tipTx.propagateResponse).toBe('success');
+      done();
     });
   });
 
   it("should scan an opentip", function(done) {
-    var txHash = "7235a656b4f3e578e00c9980d4ea868d8de89a8616e019ccf68db9f0c1d1a6ff";
+    var txid = "7235a656b4f3e578e00c9980d4ea868d8de89a8616e019ccf68db9f0c1d1a6ff";
     openpublish.scanSingle({
-      txHash:txHash,
-      getTransaction: getTransaction
+      txid: txid,
+      commonBlockchain: commonBlockchain
     }, function(err, tip) {
       expect(tip.openpublishSha1).toBe(sha1);
       expect(tip.tipAmount).toBe(20000);
