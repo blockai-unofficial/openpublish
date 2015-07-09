@@ -135,24 +135,25 @@ describe("open-publish", function() {
       commonWallet: commonWallet,
       commonBlockchain: commonBlockchain
     }, function(err, receipt) {
-      //console.log(err, receipt);
       var blockcastTx = receipt.blockcastTx;
       var txid = blockcastTx.txid;
-      openpublish.scanSingle({
-        txid: txid,
-        commonBlockchain: commonBlockchain
-      }, function(err, data) {
-        expect(data.op).toBe("r");
-        expect(data.btih).toBe(fileBtih);
-        expect(data.sha1).toBe(fileSha1);
-        expect(data.name).toBe(fileName);
-        expect(data.size).toBe(fileBuffer.length);
-        expect(data.type).toBe(fileType);
-        expect(data.title).toBe(fileTitle);
-        expect(data.uri).not.toBeDefined();
-        expect(data.keywords).toBe(fileKeywords);
-        done();
-      });
+      setTimeout(function() {
+        openpublish.scanSingle({
+          txid: txid,
+          commonBlockchain: commonBlockchain
+        }, function(err, data) {
+          expect(data.op).toBe("r");
+          expect(data.btih).toBe(fileBtih);
+          expect(data.sha1).toBe(fileSha1);
+          expect(data.name).toBe(fileName);
+          expect(data.size).toBe(fileBuffer.length);
+          expect(data.type).toBe(fileType);
+          expect(data.title).toBe(fileTitle);
+          expect(data.uri).not.toBeDefined();
+          expect(data.keywords).toBe(fileKeywords);
+          done();
+        });
+      }, 1500);
     });
   });
 

@@ -97,6 +97,9 @@ var scan = function(options, callback) {
   var transactions = options.transactions;
   var tips = [];
   transactions.forEach(function(tx) {
+    if (!tx) {
+      return;
+    }
     var tip = {};
     var sources = [];
     var value;
