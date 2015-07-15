@@ -48,6 +48,7 @@ var commonBlockchain = require("abstract-common-blockchain")({
 And finally we're ready to register.
 
 ```javascript
+var openpublish = require('openpublish');
 
 var file; // a browser File object returned from drop or file select form
 var fileUri; // a permalink to the above file
@@ -61,7 +62,6 @@ openpublish.register({
   var blockcastTx = receipt.blockcastTx;
   var txid = blockcastTx.txid; // the Bitcoin transaction where the first payload of the the data is embedded
 });
-
 ```
 
 Scan for a document from a single transaction
@@ -70,6 +70,8 @@ Scan for a document from a single transaction
 We can also provide the txid from the first transaction's payload.
 
 ```javascript
+var blockcast = require('blockcast');
+
 blockcast.scanSingle({
   txid: '',
   commonBlockchain: commonBlockchain
