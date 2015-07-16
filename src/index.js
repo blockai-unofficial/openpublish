@@ -5,10 +5,10 @@ var crypto = require("crypto");
 var blockcast = require("blockcast");
 var opentip = require("./opentip");
 
-var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader");
+var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader"); // hmm...
 
 var register = function(options, callback) {
-  var file = options.file;
+  var file = options.file; // what if this works like bitstore where we check if it is a path vs. a File object?
   var keywords = options.keywords;
   var title = options.title;
   var uri = options.uri;
@@ -22,7 +22,7 @@ var register = function(options, callback) {
     var buffer = new Buffer(arr);
     buffer.name = file.name;
     if (!sha1) {
-      if (typeof(window) == "undefined") {
+      if (typeof(window) == "undefined") { // hmm...
         sha1 = crypto.createHash('sha1').update(buffer).digest("hex");
       }
       else {
