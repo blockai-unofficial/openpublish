@@ -67,6 +67,8 @@ var commonBlockchain = require("mem-common-blockchain")({
 Hosting and distribution of content is not the goal of Open Publish although an optional link to the content can be part of the metadata.
 
 ```javascript
+var openpublish = require('openpublish');
+
 var file; // a browser File object returned from drop or file select form
 var fileUri; // a permalink to the above file
 
@@ -79,7 +81,6 @@ openpublish.register({
   var blockcastTx = receipt.blockcastTx;
   var txid = blockcastTx.txid; // the Bitcoin transaction where the first payload of the the data is embedded
 });
-
 ```
 
 ## Public stream
