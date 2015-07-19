@@ -66,6 +66,8 @@ var commonBlockchain = require("mem-common-blockchain")({
 
 Hosting and distribution of content is not the goal of Open Publish although an optional link to the content can be part of the metadata.
 
+Files can be hosted on any existing web servers at the expense of the owner. A private service by Blockai called [Bitstore](https://github.com/blockai/bitstore-client) is a content-addressable file hosting and distribution service that uses Bitcoin public key infrastructure for authentication and payment. All files hosted on Bitstore are seeded on both BitTorrent and WebTorrent. As it uses Bitcoin wallets for authentication no account creation is necessary which makes it very convenient for application developers.
+
 ```javascript
 var openpublish = require('openpublish');
 
