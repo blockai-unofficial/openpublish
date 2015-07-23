@@ -107,22 +107,27 @@ var tip = function(options, callback) {
     options.tipDestinationAddress = options.destination;
   }
   opentip.create(options, function(err, signedTxHex, txid) {
-    var propagateResponse = function(err, res) {
-      var tipTx = {
-        openpublishSha1: options.openpublishSha1,
-        tipDestinationAddress: options.tipDestinationAddress,
-        tipAmount: options.tipAmount,
-        txid: txid
-      }
-      if (err) {
-        tipTx.propagateResponse = "failure";
-      }
-      else {
-        tipTx.propagateResponse = "success";
-      }
-      callback(err, tipTx);
+    if (err) {
+      callback (err, null);
     }
-    commonBlockchain.Transactions.Propagate(signedTxHex, propagateResponse);
+    else {
+      var propagateResponse = function(err, res) {
+        var tipTx = {
+          openpublishSha1: options.openpublishSha1,
+          tipDestinationAddress: options.tipDestinationAddress,
+          tipAmount: options.tipAmount,
+          txid: txid
+        }
+        if (err) {
+          tipTx.propagateResponse = "failure";
+        }
+        else {
+          tipTx.propagateResponse = "success";
+        }
+        callback(err, tipTx);
+      }
+      commonBlockchain.Transactions.Propagate(signedTxHex, propagateResponse);
+    }
   });
 };
 
