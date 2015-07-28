@@ -15,6 +15,7 @@ var register = function(options, callback) {
       commonWallet: options.commonWallet,
       commonBlockchain: options.commonBlockchain,
       propagationStatus: options.propagationStatus,
+      buildStatus: options.buildStatus
     }, function(error, blockcastTx) {
       var receipt = {
         data: data,
