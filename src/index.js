@@ -5,24 +5,48 @@ var crypto = require("crypto");
 var blockcast = require("blockcast");
 var opentip = require("./opentip");
 
-var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader"); // hmm...
+var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader");
 
 var register = function(options, callback) {
-  var file = options.file; // what if this works like bitstore where we check if it is a path vs. a File object?
+  getData(options, function(err, data) {
+    var dataJSON = JSON.stringify(data);
+    blockcast.post({
+      data: dataJSON,
+      commonWallet: options.commonWallet,
+      commonBlockchain: options.commonBlockchain,
+      propagationStatus: options.propagationStatus,
+    }, function(error, blockcastTx) {
+      var receipt = {
+        data: data,
+        blockcastTx: blockcastTx
+      };
+      callback(false, receipt);
+    });
+  });
+}
+
+var getPayloadsLength = function(options, callback) {
+  getData(options, function(err, data) {
+    var dataJSON = JSON.stringify(data);
+    blockcast.payloadsLength({data: dataJSON}, function(err, payloadsLength) {
+      callback(err, payloadsLength);
+    });
+  });
+}
+
+var getData = function(options, callback) {
+  var file = options.file;
   var keywords = options.keywords;
   var title = options.title;
   var uri = options.uri;
-  var propagationStatus = options.propagationStatus;
   var sha1 = options.sha1;
-  var commonBlockchain = options.commonBlockchain;
-  var commonWallet = options.commonWallet;
   var reader = new FileReader();
   reader.addEventListener('load', function (e) {
     var arr = new Uint8Array(e.target.result);
     var buffer = new Buffer(arr);
     buffer.name = file.name;
     if (!sha1) {
-      if (typeof(window) == "undefined") { // hmm...
+      if (typeof(window) == "undefined") {
         sha1 = crypto.createHash('sha1').update(buffer).digest("hex");
       }
       else {
@@ -43,19 +67,7 @@ var register = function(options, callback) {
         uri: uri,
         keywords: keywords
       };
-      var dataJSON = JSON.stringify(data);
-      blockcast.post({
-        data: dataJSON,
-        commonWallet: commonWallet,
-        commonBlockchain: commonBlockchain,
-        propagationStatus: propagationStatus,
-      }, function(error, blockcastTx) {
-        var receipt = {
-          data: data,
-          blockcastTx: blockcastTx
-        };
-        callback(false, receipt);
-      });
+      callback(err, data);
     });
   });
   reader.readAsArrayBuffer(file);
@@ -129,7 +141,9 @@ var tip = function(options, callback) {
 var OpenPublish = {
   register: register,
   tip: tip,
-  scanSingle: scanSingle
+  scanSingle: scanSingle,
+  getData: getData,
+  getPayloadsLength: getPayloadsLength
 };
 
 module.exports = OpenPublish;

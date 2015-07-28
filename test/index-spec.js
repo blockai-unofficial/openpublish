@@ -9,18 +9,9 @@ var fs = require('fs');
 var crypto = require("crypto");
 var request = require("request");
 
-var commonBlockchain;
-if (process.env.CHAIN_API_KEY_ID && process.env.CHAIN_API_KEY_SECRET) {
-  var ChainAPI = require("chain-unofficial");
-  commonBlockchain = ChainAPI({
-    network: "testnet", 
-    key: process.env.CHAIN_API_KEY_ID, 
-    secret: process.env.CHAIN_API_KEY_SECRET
-  });
-}
-else {
-  commonBlockchain = require("mem-common-blockchain")();
-}
+var commonBlockchain = require('blockcypher-unofficial')({
+  network: "testnet"
+});
 
 var createRandomString = function(length) {
   var characters = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
@@ -94,6 +85,19 @@ describe("open-publish", function() {
     name: fileName,
     type: fileType,
     buffer: fileBuffer
+  });
+
+  it("should get the number of transaction payloads", function(done) {
+    openpublish.getPayloadsLength({
+      file: file,
+      title: fileTitle,
+      keywords: fileKeywords,
+      commonWallet: commonWallet,
+      commonBlockchain: commonBlockchain
+    }, function(err, payloadsLength) {
+      expect(payloadsLength).toBe(5);
+      done();
+    });
   });
 
   it("should publish a small text file", function(done) {
@@ -216,6 +220,7 @@ describe("open-publish", function() {
       commonWallet: commonWallet,
       commonBlockchain: commonBlockchain
     }, function(error, tipTx) {
+      console.log(tipTx);
       expect(tipTx.tipDestinationAddress).toBe(destination);
       expect(tipTx.openpublishSha1).toBe(sha1);
       expect(tipTx.tipAmount).toBe(amount);
@@ -226,7 +231,7 @@ describe("open-publish", function() {
   });
 
   it("should scan an opentip", function(done) {
-    var txid = "7235a656b4f3e578e00c9980d4ea868d8de89a8616e019ccf68db9f0c1d1a6ff";
+    var txid = "b32192c9d2d75a8a28dd4034ea61eacb0dfe4f226acb502cfe108df20fbddebc";
     openpublish.scanSingle({
       txid: txid,
       commonBlockchain: commonBlockchain
