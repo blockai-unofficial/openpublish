@@ -31,47 +31,51 @@ var create = function(options, callback) {
   var payloadScript = bitcoin.Script.fromChunks([bitcoin.opcodes.OP_RETURN, data]);
   var tx = new bitcoin.TransactionBuilder();
   commonBlockchain.Addresses.Unspents([address], function(err, addresses_unspents) {
-    var unspentOutputs = addresses_unspents[0];
-    var compare = function(a,b) {
-      if (a.value < b.value)
-        return -1;
-      if (a.value > b.value)
-        return 1;
-      return 0;
-    };
-    unspentOutputs.sort(compare);
-    var unspentValue = 0;
-    for (var i = unspentOutputs.length - 1; i >= 0; i--) {
-      var unspentOutput = unspentOutputs[i];
-      if (unspentOutput.value === 0) {
-        continue;
-      }
-      unspentValue += unspentOutput.value;
-      tx.addInput(unspentOutput.txid, unspentOutput.vout);
-      if (unspentValue - fee - tipAmount >= 0) {
-        break;
-      }
-    };
-    tx.addOutput(payloadScript, 0);
-    tx.addOutput(tipDestinationAddress, tipAmount);
-
-    if (unspentValue - fee - tipAmount > 0) {
-      tx.addOutput(address, unspentValue - fee - tipAmount);
+    if(err || addresses_unspents.length == 0) {
+      callback("error: possibly no unspents associated with address", null);
     }
+    else {
+      var unspentOutputs = addresses_unspents[0];
+      var compare = function(a,b) {
+        if (a.value < b.value)
+          return -1;
+        if (a.value > b.value)
+          return 1;
+        return 0;
+      };
+      unspentOutputs.sort(compare);
+      var unspentValue = 0;
+      for (var i = unspentOutputs.length - 1; i >= 0; i--) {
+        var unspentOutput = unspentOutputs[i];
+        if (unspentOutput.value === 0) {
+          continue;
+        }
+        unspentValue += unspentOutput.value;
+        tx.addInput(unspentOutput.txid, unspentOutput.vout);
+        if (unspentValue - fee - tipAmount >= 0) {
+          break;
+        }
+      };
+      tx.addOutput(payloadScript, 0);
+      tx.addOutput(tipDestinationAddress, tipAmount);
 
-    // AssertionError: Number of addresses must match number of transaction inputs
-    // this seems to be a bug in bitcoinjs-lib
-    // it is checking for assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
-    // but that doesn't make sense because the number of ins doesn't have anything to do with the number of addresses...
-    // the solution is to upgrade bitcoinjs-min.js
+      if (unspentValue - fee - tipAmount > 0) {
+        tx.addOutput(address, unspentValue - fee - tipAmount);
+      }
 
-    signTransaction(tx, function(err, signedTx) {
-      var signedTxBuilt = signedTx.build();
-      var signedTxHex = signedTxBuilt.toHex();
-      var txid = signedTxBuilt.getId();
-      callback(false, signedTxHex, txid);
-    });
+      // AssertionError: Number of addresses must match number of transaction inputs
+      // this seems to be a bug in bitcoinjs-lib
+      // it is checking for assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
+      // but that doesn't make sense because the number of ins doesn't have anything to do with the number of addresses...
+      // the solution is to upgrade bitcoinjs-min.js
 
+      signTransaction(tx, function(err, signedTx) {
+        var signedTxBuilt = signedTx.build();
+        var signedTxHex = signedTxBuilt.toHex();
+        var txid = signedTxBuilt.getId();
+        callback(false, signedTxHex, txid);
+      });
+    }
   });
 };
 
