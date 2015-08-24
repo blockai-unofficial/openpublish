@@ -12,6 +12,7 @@ var register = function(options, callback) {
     var dataJSON = JSON.stringify(data);
     blockcast.post({
       data: dataJSON,
+      fee: options.fee,
       commonWallet: options.commonWallet,
       commonBlockchain: options.commonBlockchain,
       propagationStatus: options.propagationStatus,
