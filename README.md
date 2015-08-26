@@ -14,6 +14,8 @@ For example, someone could write software that displays media with a consumer Bi
 
 It assumes that the wallet address that posted the Open Publish registration transaction to the Bitcoin blockchain is controlled by the owner of the registered media.
 
+Blockai cannot control what assets are registered on the Bitcoin blockchain so it is up to individual developers or development teams to make sure they honor their local rules and regulations pertaining to copyright. For example, Blockai will not display content that is deemed to not be owned by the claimant Bitcoin address, fully adhering to any DMCA notices.
+
 # Install
 
 `npm install openpublish`
@@ -21,6 +23,8 @@ It assumes that the wallet address that posted the Open Publish registration tra
 # Browser Usage
 
 In our examples we're going to use ```bitcoinjs-lib``` to create our wallet.
+
+This wallet and the Open Publish API adhere to the [Common Wallet](https://github.com/blockai/abstract-common-wallet) standard.
 
 ## Bitcoin Wallet
 
@@ -91,7 +95,15 @@ Open Publish transactions are native Bitcoin transactions. This means they are b
 
 What this means is that neither Blockai nor any other private entity is required to register with Open Publish.
 
-Here we're scanning for a list of Open Published documents for our wallet. Open Publish uses the Blockcast protocol to embed data in the blockchain.
+### Open Publish State
+
+Blockai runs and maintains it's own Open Publish state machine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
+
+Check out the [```openpublish-state```](https://github.com/blockai/openpublish-state) for more info.
+
+### Scanning without using Blockai's Open Publish State
+
+Here we're scanning for a list of Open Published documents for our wallet. Open Publish uses the [Blockcast](https://github.com/williamcotton/blockcast) protocol to embed data in the blockchain.
 
 ```javascript
 commonBlockchain.Addresses.Transactions([commonWallet.address], function(err, addresses_transactions) {
@@ -113,6 +125,26 @@ commonBlockchain.Addresses.Transactions([commonWallet.address], function(err, ad
         openPublishDocuments.push(data);
       }
     });
+  });
+});
+```
+
+## Tipping and Micropayments
+
+Open Publish comes with some very basic tipping functionalities. The tip will only be valid if the destination address matches the owner of the asset as registered on the blockchain.
+
+```js
+openpublish.tip({
+  destination: "1AqutfHuTHCgrarEHTVU9W9uFRsDJasDh7",
+  sha1: "a4126fb64b1093381e53ac3645ad19c947fbaf27",
+  amount: 10000, // in satoshi
+  commonWallet: commonWallet,
+  commonBlockchain: commonBlockchain
+}, function(error, tipTx) {
+  var tippingState = component.state.tippingState;
+  tippingState[imageDoc.sha1] = "tipped";
+  component.setState({
+    tippingState: tippingState
   });
 });
 ```
