@@ -142,7 +142,9 @@ var scan = function(options, callback) {
       tip.tipDestinationAddresses = [sources];
       tip.tipAmount = value;
     }
-    tips.push(tip)
+    if (tip.openpublishSha1 && tip.tipDestinationAddresses && tip.tipAmount) {
+      tips.push(tip)
+    }
   });
   callback(false, tips)
 };
