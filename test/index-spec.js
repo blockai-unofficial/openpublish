@@ -9,8 +9,38 @@ var fs = require('fs');
 var crypto = require("crypto");
 var request = require("request");
 
+var txHexToJSON = require('bitcoin-tx-hex-to-json');
+
+var env = require('node-env-file');
+env('./.env');
+
+var BLOCKCYPHER_TOKEN = process.env.BLOCKCYPHER_TOKEN;
+
 var commonBlockchain = require('blockcypher-unofficial')({
+  key: BLOCKCYPHER_TOKEN,
   network: "testnet"
+});
+
+var testCommonWallet = require('test-common-wallet');
+
+var aliceWallet = testCommonWallet({
+  seed: "test",
+  network: "testnet",
+  commonBlockchain: commonBlockchain
+});
+
+var bobWallet = testCommonWallet({
+  seed: "test1",
+  network: "testnet",
+  commonBlockchain: commonBlockchain
+});
+
+var inMemoryCommonBlockchain = require("mem-common-blockchain")();
+
+var inMemoryAliceWallet = testCommonWallet({
+  seed: "test",
+  network: "testnet",
+  commonBlockchain: inMemoryCommonBlockchain
 });
 
 var createRandomString = function(length) {
@@ -32,33 +62,7 @@ var createRandomFile = function(options, callback) {
   });
 };
 
-var address = "n3PDRtKoHXHNt8FU17Uu9Te81AnKLa7oyU";
-var privateKeyWIF = "KyjhazeX7mXpHedQsKMuGh56o3rh8hm8FGhU3H6HPqfP9pA4YeoS";
-
 var sha1 = "dc724af18fbdd4e59189f5fe768a5f8311527050";
-
-var bitstore = require('bitstore')({
-  privateKey: privateKeyWIF,
-  network: 'testnet'
-});
-
-var signFromPrivateKeyWIF = function(privateKeyWIF) {
-  return function(txHex, callback) {
-    var tx = bitcoin.Transaction.fromHex(txHex);
-    var key = bitcoin.ECKey.fromWIF(privateKeyWIF);
-    tx.sign(0, key); 
-    var txid = tx.getId();
-    var signedTxHex = tx.toHex();
-    callback(false, signedTxHex, txid);
-  }
-};
-
-var signRawTransaction = signFromPrivateKeyWIF(privateKeyWIF);
-
-var commonWallet = {
-  signRawTransaction: signRawTransaction,
-  address: address
-}
 
 describe("open-publish", function() {
 
@@ -81,18 +85,17 @@ describe("open-publish", function() {
     keywords: fileKeywords
   }
 
-  var file = new File({ 
-    name: fileName,
-    type: fileType,
-    buffer: fileBuffer
-  });
-
   it("should get the number of transaction payloads", function(done) {
+    var file = new File({ 
+      name: fileName,
+      type: fileType,
+      buffer: fileBuffer
+    });
     openpublish.getPayloadsLength({
       file: file,
       title: fileTitle,
       keywords: fileKeywords,
-      commonWallet: commonWallet,
+      commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(err, payloadsLength) {
       expect(payloadsLength).toBe(5);
@@ -101,11 +104,16 @@ describe("open-publish", function() {
   });
 
   it("should publish a small text file", function(done) {
+    var file = new File({ 
+      name: fileName,
+      type: fileType,
+      buffer: fileBuffer
+    });
     openpublish.register({
       file: file,
       title: fileTitle,
       keywords: fileKeywords,
-      commonWallet: commonWallet,
+      commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(err, receipt) {
       var data = receipt.data;
@@ -125,8 +133,90 @@ describe("open-publish", function() {
     });
   });
 
-  it("should find an open publish transaction", function(done) {
+  it("should register then transfer ownership", function(done) {
 
+    var randomBufferSize = 48;
+    var randomFileName = 'randomFile.txt';
+    var randomString = createRandomString(randomBufferSize);
+    
+    var assetValue = 50000000;
+    var bitcoinValue = 12345;
+
+    var bobWalletSignPrimaryTxHex = function(txHex, callback) {
+      var tx = txHexToJSON(txHex);
+      expect(tx.vin.length).toBe(2);
+      expect(tx.vout.length).toBe(4);
+      expect(tx.vout[0].value).toBe(bitcoinValue);
+      expect(tx.vout[2].value).toBe(0);
+      expect(tx.vout[0].scriptPubKey.type).toBe("pubkeyhash");
+      expect(tx.vout[1].scriptPubKey.type).toBe("pubkeyhash");
+      expect(tx.vout[2].scriptPubKey.type).toBe("nulldata");
+      expect(tx.vout[3].scriptPubKey.type).toBe("pubkeyhash");
+      bobWallet.signRawTransaction({txHex: txHex, input: 0}, callback);
+    };
+
+    createRandomFile({string: randomString, fileName: randomFileName}, function(path) {
+
+      var randomFile = new File(path);
+      randomFile.size = randomBufferSize;
+
+      var ttl = 365;
+
+      openpublish.register({
+        file: randomFile,
+        commonWallet: aliceWallet,
+        commonBlockchain: commonBlockchain
+      }, function(err, receipt) {
+
+        var registerData = receipt.data;
+        var sha1 = registerData.sha1;
+
+        openpublish.transfer({
+          assetValue: assetValue,
+          bitcoinValue: bitcoinValue,
+          ttl: ttl,
+          sha1: sha1,
+          assetWallet: aliceWallet,
+          bitcoinWallet: bobWallet,
+          bitcoinWalletSignPrimaryTxHex: bobWalletSignPrimaryTxHex,
+          commonBlockchain: commonBlockchain
+        }, function(err, receipt) {
+          var transferData = receipt.data;
+          expect(transferData.op).toBe("t");
+          expect(transferData.sha1).toBe(sha1);
+          expect(transferData.value).toBe(assetValue);
+          expect(transferData.ttl).toBe(ttl);
+          expect(receipt.blockcastTx.txid).toBeDefined();
+          done();
+        });
+      });
+    });
+  });
+
+  it("should find an open publish register transaction", function(done) {
+    openpublish.scanSingle({
+      txid: '35780ddbbf5722f714ef0c5f3899634f745ea5b760acec48e6b1283bf4ac3658',
+      commonBlockchain: commonBlockchain
+    }, function(err, data) {
+      expect(data.op).toBe("r");
+      expect(data.btih).toBe(fileBtih);
+      expect(data.sha1).toBe(fileSha1);
+      expect(data.name).toBe(fileName);
+      expect(data.size).toBe(fileBuffer.length);
+      expect(data.type).toBe(fileType);
+      expect(data.title).toBe(fileTitle);
+      expect(data.uri).not.toBeDefined();
+      expect(data.keywords).toBe(fileKeywords);
+      done();
+    });
+  });
+
+  it("should publish and then find an open publish transaction (inMemoryCommonBlockchain)", function(done) {
+    var file = new File({ 
+      name: fileName,
+      type: fileType,
+      buffer: fileBuffer
+    });
     openpublish.register({
       file: file,
       title: fileTitle,
@@ -136,76 +226,25 @@ describe("open-publish", function() {
       btih: fileBtih,
       size: fileBuffer.legnth,
       type: fileType,
-      commonWallet: commonWallet,
-      commonBlockchain: commonBlockchain
+      commonWallet: inMemoryAliceWallet,
+      commonBlockchain: inMemoryCommonBlockchain
     }, function(err, receipt) {
       var blockcastTx = receipt.blockcastTx;
       var txid = blockcastTx.txid;
-      setTimeout(function() {
-        openpublish.scanSingle({
-          txid: txid,
-          commonBlockchain: commonBlockchain
-        }, function(err, data) {
-          expect(data.op).toBe("r");
-          expect(data.btih).toBe(fileBtih);
-          expect(data.sha1).toBe(fileSha1);
-          expect(data.name).toBe(fileName);
-          expect(data.size).toBe(fileBuffer.length);
-          expect(data.type).toBe(fileType);
-          expect(data.title).toBe(fileTitle);
-          expect(data.uri).not.toBeDefined();
-          expect(data.keywords).toBe(fileKeywords);
-          done();
-        });
-      }, 1500);
-    });
-  });
-
-  it("should post to bitstore and then register with open publish", function(done) {
-    var randomBufferSize = 48;
-    var randomFileName = 'randomFile.txt';
-    var randomString = createRandomString(randomBufferSize);
-    createRandomFile({string: randomString, fileName: randomFileName}, function(path) {
-      var randomFile = new File(path);
-      bitstore.files.put(path, function (err, res) {
-        var receipt = res.body;
-        var uri = receipt.uri;
-        var bistoreSha1 = receipt.hash_sha1;
-        var bitstoreMimetype = receipt.mimetype;
-        expect(receipt.size).toBe(randomBufferSize);
-        expect(receipt.mimetype).toBe('text/plain');
-        expect(receipt.filename).toBe(randomFileName);
-        expect(uri).toBeDefined();
-        // update
-        randomFile.size = randomBufferSize; // this janky File object we're using needs a little help figuring out the size
-        openpublish.register({
-          uri: uri,
-          file: randomFile,
-          commonWallet: commonWallet,
-          commonBlockchain: commonBlockchain
-        }, function(err, receipt) {
-          var blockcastTx = receipt.blockcastTx;
-          var txid = blockcastTx.txid;
-          expect(txid).toBeDefined();
-          setTimeout(function() {
-            blockcast.scanSingle({
-              txid: txid,
-              commonBlockchain: commonBlockchain
-            }, function(err, message) {
-              var data = JSON.parse(message);
-              expect(data.op).toBe("r");
-              expect(data.sha1).toBe(bistoreSha1);
-              expect(data.name).toBe(randomFileName);
-              expect(data.size).toBe(randomBufferSize);
-              expect(data.type).toBe(bitstoreMimetype);
-              expect(data.uri).toBe(uri);
-              request(uri, function(err, res, body) {
-                expect(body).toBe(randomString);
-                done();
-              });
-            });
-          }, 3000);
-        });
+      openpublish.scanSingle({
+        txid: txid,
+        commonBlockchain: inMemoryCommonBlockchain
+      }, function(err, data) {
+        expect(data.op).toBe("r");
+        expect(data.btih).toBe(fileBtih);
+        expect(data.sha1).toBe(fileSha1);
+        expect(data.name).toBe(fileName);
+        expect(data.size).toBe(fileBuffer.length);
+        expect(data.type).toBe(fileType);
+        expect(data.title).toBe(fileTitle);
+        expect(data.uri).not.toBeDefined();
+        expect(data.keywords).toBe(fileKeywords);
+        done();
       });
     });
   });
@@ -217,10 +256,9 @@ describe("open-publish", function() {
       destination: destination,
       sha1: sha1,
       amount: amount,
-      commonWallet: commonWallet,
+      commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(error, tipTx) {
-      console.log(tipTx);
       expect(tipTx.tipDestinationAddress).toBe(destination);
       expect(tipTx.openpublishSha1).toBe(sha1);
       expect(tipTx.tipAmount).toBe(amount);

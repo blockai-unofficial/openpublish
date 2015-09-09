@@ -27,6 +27,47 @@ var register = function(options, callback) {
   });
 }
 
+var transfer = function(options, callback) {
+  var assetValue = options.assetValue;
+  var bitcoinValue = options.bitcoinValue;
+  var sha1 = options.sha1;
+  var ttl = options.ttl;
+  var data = {
+    op: "t",
+    sha1: sha1,
+    value: assetValue,
+    ttl: ttl,
+  };
+  var dataJSON = JSON.stringify(data);
+  var assetWallet = options.assetWallet;
+  var bitcoinWallet = options.bitcoinWallet;
+  var bitcoinWalletSignPrimaryTxHex = options.bitcoinWalletSignPrimaryTxHex || function(txHex, callback) {
+    bitcoinWallet.signRawTransaction({txHex: txHex, input: 0}, callback);
+  };
+  bitcoinWallet.createTransaction({
+    destinationAddress: assetWallet.address,
+    value: bitcoinValue,
+    skipSign: true
+  }, function(err, primaryTxHex) {
+    blockcast.post({
+      primaryTxHex: primaryTxHex,
+      signPrimaryTxHex: bitcoinWalletSignPrimaryTxHex,
+      data: dataJSON,
+      fee: options.fee,
+      commonWallet: assetWallet,
+      commonBlockchain: options.commonBlockchain,
+      propagationStatus: options.propagationStatus,
+      buildStatus: options.buildStatus
+    }, function(error, blockcastTx) {
+      var receipt = {
+        data: data,
+        blockcastTx: blockcastTx
+      };
+      callback(false, receipt);
+    });
+  });
+};
+
 var getPayloadsLength = function(options, callback) {
   getData(options, function(err, data) {
     var dataJSON = JSON.stringify(data);
@@ -61,14 +102,26 @@ var getData = function(options, callback) {
       var data = {
         op: "r",
         btih: btih,
-        sha1: sha1,
-        name: file.name,
-        size: file.size,
-        type: file.type,
-        title: title,
-        uri: uri,
-        keywords: keywords
+        sha1: sha1
       };
+      if (file.name) {
+        data.name = file.name;
+      }
+      if (file.size) {
+        data.size = file.size;
+      }
+      if (file.type) {
+        data.type = file.type;
+      }
+      if (title) {
+        data.title = title;
+      }
+      if (uri) {
+        data.uri = uri;
+      }
+      if (keywords) {
+        data.keywords = keywords;
+      }
       callback(err, data);
     });
   });
@@ -147,6 +200,7 @@ var tip = function(options, callback) {
 
 var OpenPublish = {
   register: register,
+  transfer: transfer,
   tip: tip,
   scanSingle: scanSingle,
   getData: getData,
