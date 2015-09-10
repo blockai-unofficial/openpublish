@@ -73,6 +73,7 @@ describe("open-publish", function() {
   var fileKeywords = "test, text, txt";
   var fileBtih = "335400c43179bb1ad0085289e4e60c0574e6252e";
   var fileSha1 = "dc724af18fbdd4e59189f5fe768a5f8311527050";
+  var fileIpfs = "QmcJf1w9bVpquGdzCp86pX4K21Zcn7bJBUtrBP1cr2NFuR";
 
   var testData0 = {
     op: "r",
@@ -98,7 +99,7 @@ describe("open-publish", function() {
       commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(err, payloadsLength) {
-      expect(payloadsLength).toBe(5);
+      expect(payloadsLength).toBe(6);
       done();
     });
   });
@@ -120,6 +121,7 @@ describe("open-publish", function() {
       expect(data.op).toBe("r");
       expect(data.btih).toBe(fileBtih);
       expect(data.sha1).toBe(fileSha1);
+      expect(data.ipfs).toBe(fileIpfs);
       expect(data.name).toBe(fileName);
       expect(data.size).toBe(fileBuffer.length);
       expect(data.type).toBe(fileType);
@@ -128,7 +130,7 @@ describe("open-publish", function() {
       expect(data.keywords).toBe(fileKeywords);
       var blockcastTx = receipt.blockcastTx;
       expect(blockcastTx.txid).toBeDefined();
-      expect(blockcastTx.transactionTotal).toBe(5);
+      expect(blockcastTx.transactionTotal).toBe(6);
       done();
     });
   });

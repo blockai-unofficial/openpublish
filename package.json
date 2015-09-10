@@ -1,23 +1,23 @@
 {
   "name": "openpublish",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.",
   "main": "src/index.js",
   "directories": {
     "test": "npm test"
   },
   "dependencies": {
-    "async": "^1.4.2",
-    "bitcoinjs-lib": "^1.5.8",
     "blockcast": "^1.2.1",
+    "bs58": "^3.0.0",
     "create-torrent": "^3.15.1",
     "filereader": "^0.10.3",
     "magnet-uri": "^5.0.0",
-    "parse-torrent": "^5.0.0",
-    "xhr": "^2.0.4"
+    "multihashes": "^0.1.2",
+    "parse-torrent": "^5.0.0"
   },
   "devDependencies": {
     "bitcoin-tx-hex-to-json": "0.0.3",
+    "bitcoinjs-lib": "^1.5.8",
     "blockcypher-unofficial": "^1.5.0",
     "browserify": "^11.0.1",
     "drag-drop": "^2.3.0",
@@ -31,9 +31,7 @@
     "watchify": "^3.4.0"
   },
   "scripts": {
-    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions",
-    "build-dev": "watchify test/browser-index.js -o test/article-build.js -t reactify -d -v",
-    "watch": "nodemon --exec make --ignore test/article-build.js"
+    "test": "./node_modules/.bin/jasmine-node test/ --forceexit --verbose --captureExceptions"
   },
   "repository": {
     "type": "git",

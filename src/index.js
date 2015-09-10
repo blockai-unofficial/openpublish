@@ -1,11 +1,12 @@
-var createTorrent = require('create-torrent');
-var parseTorrent = require('parse-torrent');
-var magnet = require('magnet-uri');
-var crypto = require("crypto");
 var blockcast = require("blockcast");
-var opentip = require("./opentip");
-
+var createTorrent = require('create-torrent');
 var FileReader = typeof(window) != "undefined" ? window.FileReader : require("filereader");
+var magnet = require('magnet-uri');
+var parseTorrent = require('parse-torrent');
+var multihash = require('multihashes');
+var bs58 = require('bs58')
+var crypto = require("crypto");
+var opentip = require("./opentip");
 
 var register = function(options, callback) {
   getData(options, function(err, data) {
@@ -96,13 +97,23 @@ var getData = function(options, callback) {
         sha1 = crypto.createHash('sha1').update(arr).digest("hex");
       }
     }
+    var sha256Buffer;
+    if (typeof(window) == "undefined") {
+      sha256Buffer = crypto.createHash('sha256').update(buffer).digest("buffer");
+    }
+    else {
+      sha256Buffer = crypto.createHash('sha256').update(arr).digest("buffer");
+    }
+    var sha256MultihashBuffer = multihash.encode(sha256Buffer, 'sha2-256');
+    var ipfs = bs58.encode(sha256MultihashBuffer);
     createTorrent(buffer, function onTorrent (err, torrentBuffer) {
       var torrent = parseTorrent(torrentBuffer);
       var btih = torrent.infoHash;
       var data = {
         op: "r",
         btih: btih,
-        sha1: sha1
+        sha1: sha1,
+        ipfs: ipfs
       };
       if (file.name) {
         data.name = file.name;
