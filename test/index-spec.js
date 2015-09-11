@@ -12,7 +12,7 @@ var request = require("request");
 var txHexToJSON = require('bitcoin-tx-hex-to-json');
 
 var env = require('node-env-file');
-env('./.env');
+env('./.env', { raise: false });
 
 var BLOCKCYPHER_TOKEN = process.env.BLOCKCYPHER_TOKEN;
 
@@ -87,7 +87,7 @@ describe("open-publish", function() {
   }
 
   it("should get the number of transaction payloads", function(done) {
-    var file = new File({ 
+    var file = new File({
       name: fileName,
       type: fileType,
       buffer: fileBuffer
@@ -105,7 +105,7 @@ describe("open-publish", function() {
   });
 
   it("should publish a small text file", function(done) {
-    var file = new File({ 
+    var file = new File({
       name: fileName,
       type: fileType,
       buffer: fileBuffer
@@ -140,7 +140,7 @@ describe("open-publish", function() {
     var randomBufferSize = 48;
     var randomFileName = 'randomFile.txt';
     var randomString = createRandomString(randomBufferSize);
-    
+
     var assetValue = 50000000;
     var bitcoinValue = 12345;
 
@@ -214,7 +214,7 @@ describe("open-publish", function() {
   });
 
   it("should publish and then find an open publish transaction (inMemoryCommonBlockchain)", function(done) {
-    var file = new File({ 
+    var file = new File({
       name: fileName,
       type: fileType,
       buffer: fileBuffer

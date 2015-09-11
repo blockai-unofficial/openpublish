@@ -1,0 +1,7 @@
+image: node0.10
+env:
+  - DEBUG=*
+  - BLOCKCYPHER_TOKEN=
+script:
+  - npm install
+  - npm test
