@@ -1,5 +1,7 @@
 # Open Publish
 
+[![Build Status](http://drone.d.blockai.com/api/badge/github.com/blockai/openpublish/status.svg?branch=master)](http://drone.d.blockai.com/github.com/blockai/openpublish)
+
 A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.
 
 Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining BlockSign, OpenAssets and a royalty payment mechanism.
