@@ -136,7 +136,7 @@ Check out the [```openpublish-state```](https://github.com/blockai/openpublish-s
 
 ### Scanning without using Blockai's Open Publish State
 
-Here we're scanning for a list of Open Published documents for our wallet. Open Publish uses the [Blockcast](https://github.com/williamcotton/blockcast) protocol to embed data in the blockchain.
+Here we're scanning for a list of Open Published documents for our wallet. During these early development stages Open Publish uses the [Blockcast](https://github.com/blockai/blockcast) protocol to embed data in the blockchain. As the protocol matures it will support additional small footprint formats.
 
 In this example we're querying the bitcoin blockchain for all of Alice's transactions and then scanning them one by one to look for all of her Open Publish registrations.
 
@@ -148,11 +148,11 @@ commonBlockchain.Addresses.Transactions([aliceWallet.address], function(err, add
     blockcast.scanSingle({
       txid: tx.txid,
       commonBlockchain: commonBlockchain
-    }, function(err, message) {
+    }, function(err, body) {
       if (!message) {
         return;
       }
-      var data = JSON.parse(message);
+      var data = JSON.parse(body);
       if (!data) {
         return;
       }

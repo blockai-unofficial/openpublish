@@ -12,7 +12,7 @@ var request = require("request");
 var txHexToJSON = require('bitcoin-tx-hex-to-json');
 
 var env = require('node-env-file');
-env('./.env', { raise: false });
+env('./.env');
 
 var BLOCKCYPHER_TOKEN = process.env.BLOCKCYPHER_TOKEN;
 
@@ -87,7 +87,7 @@ describe("open-publish", function() {
   }
 
   it("should get the number of transaction payloads", function(done) {
-    var file = new File({
+    var file = new File({ 
       name: fileName,
       type: fileType,
       buffer: fileBuffer
@@ -99,13 +99,13 @@ describe("open-publish", function() {
       commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(err, payloadsLength) {
-      expect(payloadsLength).toBe(6);
+      expect(payloadsLength).toBe(3);
       done();
     });
   });
 
   it("should publish a small text file", function(done) {
-    var file = new File({
+    var file = new File({ 
       name: fileName,
       type: fileType,
       buffer: fileBuffer
@@ -130,7 +130,7 @@ describe("open-publish", function() {
       expect(data.keywords).toBe(fileKeywords);
       var blockcastTx = receipt.blockcastTx;
       expect(blockcastTx.txid).toBeDefined();
-      expect(blockcastTx.transactionTotal).toBe(6);
+      expect(blockcastTx.transactionTotal).toBe(3);
       done();
     });
   });
@@ -140,7 +140,7 @@ describe("open-publish", function() {
     var randomBufferSize = 48;
     var randomFileName = 'randomFile.txt';
     var randomString = createRandomString(randomBufferSize);
-
+    
     var assetValue = 50000000;
     var bitcoinValue = 12345;
 
@@ -152,7 +152,7 @@ describe("open-publish", function() {
       expect(tx.vout[2].value).toBe(0);
       expect(tx.vout[0].scriptPubKey.type).toBe("pubkeyhash");
       expect(tx.vout[1].scriptPubKey.type).toBe("pubkeyhash");
-      expect(tx.vout[2].scriptPubKey.type).toBe("nulldata");
+      expect(tx.vout[2].scriptPubKey.type).toBe("nonstandard");
       expect(tx.vout[3].scriptPubKey.type).toBe("pubkeyhash");
       bobWallet.signRawTransaction({txHex: txHex, input: 0}, callback);
     };
@@ -197,7 +197,7 @@ describe("open-publish", function() {
 
   it("should find an open publish register transaction", function(done) {
     openpublish.scanSingle({
-      txid: '35780ddbbf5722f714ef0c5f3899634f745ea5b760acec48e6b1283bf4ac3658',
+      txid: 'a37cd6234df77d3bbd8955336ec16bbc5ae24908c066bde29163834461b6b856',
       commonBlockchain: commonBlockchain
     }, function(err, data) {
       expect(data.op).toBe("r");
@@ -214,7 +214,7 @@ describe("open-publish", function() {
   });
 
   it("should publish and then find an open publish transaction (inMemoryCommonBlockchain)", function(done) {
-    var file = new File({
+    var file = new File({ 
       name: fileName,
       type: fileType,
       buffer: fileBuffer
