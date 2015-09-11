@@ -1,6 +1,6 @@
 {
   "name": "openpublish",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.",
   "main": "src/index.js",
   "directories": {
@@ -12,7 +12,7 @@
     "create-torrent": "^3.15.1",
     "filereader": "^0.10.3",
     "magnet-uri": "^5.0.0",
-    "multihashes": "^0.1.2",
+    "multihashes": "git://github.com/williamcotton/node-multihash.git",
     "parse-torrent": "^5.0.0"
   },
   "devDependencies": {
