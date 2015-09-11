@@ -102,7 +102,7 @@ var getData = function(options, callback) {
       sha256Buffer = crypto.createHash('sha256').update(buffer).digest("buffer");
     }
     else {
-      sha256Buffer = crypto.createHash('sha256').update(arr).digest("buffer");
+      sha256Buffer = new Buffer(crypto.createHash('sha256').update(arr).digest("hex"), "hex");
     }
     var sha256MultihashBuffer = multihash.encode(sha256Buffer, 'sha2-256');
     var ipfs = bs58.encode(sha256MultihashBuffer);

@@ -117,6 +117,7 @@ describe("open-publish", function() {
       commonWallet: aliceWallet,
       commonBlockchain: commonBlockchain
     }, function(err, receipt) {
+      console.log(receipt);
       var data = receipt.data;
       expect(data.op).toBe("r");
       expect(data.btih).toBe(fileBtih);
@@ -152,7 +153,7 @@ describe("open-publish", function() {
       expect(tx.vout[2].value).toBe(0);
       expect(tx.vout[0].scriptPubKey.type).toBe("pubkeyhash");
       expect(tx.vout[1].scriptPubKey.type).toBe("pubkeyhash");
-      expect(tx.vout[2].scriptPubKey.type).toBe("nonstandard");
+      expect(tx.vout[2].scriptPubKey.type).toBe("nulldata");
       expect(tx.vout[3].scriptPubKey.type).toBe("pubkeyhash");
       bobWallet.signRawTransaction({txHex: txHex, input: 0}, callback);
     };
@@ -197,7 +198,7 @@ describe("open-publish", function() {
 
   it("should find an open publish register transaction", function(done) {
     openpublish.scanSingle({
-      txid: 'a37cd6234df77d3bbd8955336ec16bbc5ae24908c066bde29163834461b6b856',
+      txid: '1a1a36bed1de5a46ae1c85c2a4efe53201b7cd650911576aba331279275b0e25',
       commonBlockchain: commonBlockchain
     }, function(err, data) {
       expect(data.op).toBe("r");
