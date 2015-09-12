@@ -12,7 +12,7 @@ var request = require("request");
 var txHexToJSON = require('bitcoin-tx-hex-to-json');
 
 var env = require('node-env-file');
-env('./.env');
+env('./.env', { raise: false });
 
 var BLOCKCYPHER_TOKEN = process.env.BLOCKCYPHER_TOKEN;
 
@@ -138,14 +138,11 @@ describe("open-publish", function() {
   });
 
   it("should register then transfer ownership", function(done) {
-
     var randomBufferSize = 48;
     var randomFileName = 'randomFile.txt';
     var randomString = createRandomString(randomBufferSize);
-    
     var assetValue = 50000000;
     var bitcoinValue = 12345;
-
     var bobWalletSignPrimaryTxHex = function(txHex, callback) {
       var tx = txHexToJSON(txHex);
       expect(tx.vin.length).toBe(2);
@@ -158,23 +155,18 @@ describe("open-publish", function() {
       expect(tx.vout[3].scriptPubKey.type).toBe("pubkeyhash");
       bobWallet.signRawTransaction({txHex: txHex, input: 0}, callback);
     };
-
     createRandomFile({string: randomString, fileName: randomFileName}, function(path) {
-
       var randomFile = new File(path);
       randomFile.size = randomBufferSize;
-
       var ttl = 365;
-
       openpublish.register({
         file: randomFile,
         commonWallet: aliceWallet,
         commonBlockchain: commonBlockchain
       }, function(err, receipt) {
-
+        console.log(receipt);
         var registerData = receipt.data;
         var sha1 = registerData.sha1;
-
         openpublish.transfer({
           assetValue: assetValue,
           bitcoinValue: bitcoinValue,
@@ -185,6 +177,7 @@ describe("open-publish", function() {
           bitcoinWalletSignPrimaryTxHex: bobWalletSignPrimaryTxHex,
           commonBlockchain: commonBlockchain
         }, function(err, receipt) {
+          console.log(receipt);
           var transferData = receipt.data;
           expect(transferData.op).toBe("t");
           expect(transferData.sha1).toBe(sha1);
