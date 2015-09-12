@@ -79,6 +79,7 @@ describe("open-publish", function() {
     op: "r",
     btih: fileBtih,
     sha1: fileSha1,
+    ipfs: fileIpfs,
     name: fileName,
     size: fileBuffer.length,
     type: fileType,
