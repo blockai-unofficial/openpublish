@@ -208,6 +208,20 @@ describe("open-publish", function() {
     });
   });
 
+  it("should find an open publish transfer transaction", function(done) {
+    var txid = '8f495d095ab55839675af686b98dc5b437ad3d8789546c9c5521feabbe104d70';
+    var altTxid = 'b708d89de7377a16935ac6821499e1408c072aa77561c28846b84abd975d1495';
+    openpublish.scanSingle({
+      txid: txid,
+      commonBlockchain: commonBlockchain
+    }, function(err, data) {
+      expect(data.sha1).toBe('78d4fdf50ab5c2528b9a1b69baac7fe9819f0670');
+      expect(data.value).toBe(50000000);
+      expect(data.ttl).toBe(365);
+      done();
+    });
+  });
+
   it("should publish and then find an open publish transaction (inMemoryCommonBlockchain)", function(done) {
     var file = new File({ 
       name: fileName,

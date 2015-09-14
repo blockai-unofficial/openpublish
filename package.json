@@ -1,13 +1,13 @@
 {
   "name": "openpublish",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.",
   "main": "src/index.js",
   "directories": {
     "test": "npm test"
   },
   "dependencies": {
-    "blockcast": "^3.0.1",
+    "blockcast": "^3.1.0",
     "bs58": "^3.0.0",
     "create-torrent": "^3.15.1",
     "filereader": "^0.10.3",
