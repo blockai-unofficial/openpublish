@@ -6,19 +6,19 @@ A publishing protocol for registering media as a digital asset on the Bitcoin bl
 
 Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining Proof of Existence, OpenAssets and a royalty payment mechanism.
 
-Like BlockSign, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
+Like Proof of Existence, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
 
 The Open Publish protocol allows claiming ownership over a digital asset that can be used by other products to represent a limited and non-exclusive copyright of this document.
 
 The Open Publish protocol allows for transfering partial ownership of these digital assets.
 
-Any honest third-party software can read the state of ownership from the Bitcoin blockchain and create software that directs payments to the legitimate owners of the content in the form of direct tips, monthly subscriptions or various synchronization licenses modeled on existing intellectual property systems.
+Any honest third-party software can read the state of ownership from the Bitcoin blockchain and create software that directs payments to the legitimate owners of the content in the form of direct tips, dividends, monthly subscriptions or various synchronization licenses modeled on existing intellectual property systems.
 
 For example, someone could write software that displays media with a consumer Bitcoin wallet allowing for people to easily and directly tip the rights-holders.
 
 It assumes that the wallet address that posted the Open Publish registration transaction to the Bitcoin blockchain is controlled by the owner of the registered media.
 
-Blockai cannot control what assets are registered on the Bitcoin blockchain so it is up to individual developers or development teams to make sure they honor their local rules and regulations pertaining to copyright. For example, Blockai will not display content that is deemed to not be owned by the claimant Bitcoin address, fully adhering to any DMCA notices.
+Blockai cannot control what assets are registered on the Bitcoin blockchain so it is up to individual developers or development teams to make sure they honor their local rules and regulations pertaining to copyright. For example, Blockai will not display content that is deemed to not be owned by the claimant Bitcoin address, fully adhering to any DMCA notices or other local regulations.
 
 # Install
 
