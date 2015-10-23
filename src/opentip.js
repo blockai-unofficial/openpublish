@@ -62,12 +62,6 @@ var create = function (options, callback) {
         tx.addOutput(address, unspentValue - fee - tipAmount)
       }
 
-      // AssertionError: Number of addresses must match number of transaction inputs
-      // this seems to be a bug in bitcoinjs-lib
-      // it is checking for assert.equal(tx.ins.length, addresses.length, 'Number of addresses must match number of transaction inputs')
-      // but that doesn't make sense because the number of ins doesn't have anything to do with the number of addresses...
-      // the solution is to upgrade bitcoinjs-min.js
-
       signTransaction(tx, function (err, signedTx) {
         if (err) { } // TODO
         var signedTxBuilt = signedTx.build()
@@ -138,6 +132,13 @@ var scan = function (options, callback) {
     })
     tip.tipDestinationAddresses = tipDestinationAddresses
     tip.tipAmount = tipAmount
+    tip.tipSourceAddresses = []
+    tip.txid = tx.txid
+    sources.forEach(function (source) {
+      if (tipDestinationAddresses.indexOf(source) === -1) {
+        tip.tipSourceAddresses.push(source)
+      }
+    })
     if (tip.tipDestinationAddresses.length === 0 && typeof (value) !== 'undefined') {
       tip.tipDestinationAddresses = [sources]
       tip.tipAmount = value
