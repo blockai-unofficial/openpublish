@@ -4,7 +4,7 @@
 
 A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.
 
-Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining BlockSign, OpenAssets and a royalty payment mechanism.
+Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining Proof of Existence, OpenAssets and a royalty payment mechanism.
 
 Like BlockSign, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
 
