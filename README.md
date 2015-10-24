@@ -128,41 +128,19 @@ Open Publish transactions are native Bitcoin transactions. This means they are b
 
 What this means is that neither Blockai nor any other private entity is required to register with Open Publish.
 
-### Open Publish State
+### Blockai Open Publish State Web Service
 
-Blockai runs and maintains it's own Open Publish state machine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
+Blockai runs and maintains it's own Open Publish state engine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
 
 Check out the [```openpublish-state```](https://github.com/blockai/openpublish-state) for more info.
 
-### Scanning without using Blockai's Open Publish State
+### Running Your Own Open Publish State Engine
 
-Here we're scanning for a list of Open Published documents for our wallet. During these early development stages Open Publish uses the [Blockcast](https://github.com/blockai/blockcast) protocol to embed data in the blockchain. As the protocol matures it will support additional small footprint formats.
+If you'd like to run your own Open Publish state engine you'll need a compatible data store and access to a Common Blockchain adapter like [```rpc-common-blockchain```](https://github.com/blockai/rpc-common-blockchain).
 
-In this example we're querying the bitcoin blockchain for all of Alice's transactions and then scanning them one by one to look for all of her Open Publish registrations.
+You can use this to independently verify the state of Open Publish registrations and transfers and to run your own Open Publish based services.
 
-```javascript
-commonBlockchain.Addresses.Transactions([aliceWallet.address], function(err, addresses_transactions) {
-  var transactions = addresses_transactions[0];
-  var openPublishDocuments = [];
-  transactions.forEach(function(tx) {
-    blockcast.scanSingle({
-      txid: tx.txid,
-      commonBlockchain: commonBlockchain
-    }, function(err, body) {
-      if (!message) {
-        return;
-      }
-      var data = JSON.parse(body);
-      if (!data) {
-        return;
-      }
-      if (data.op == "r") {
-        openPublishDocuments.push(data);
-      }
-    });
-  });
-});
-```
+Check out the [```openpublish-state-engine```](https://github.com/blockai/openpublish-state-engine) for more info.
 
 ## Tipping and Micropayments
 
