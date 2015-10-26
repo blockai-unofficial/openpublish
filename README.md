@@ -4,21 +4,21 @@
 
 A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.
 
-Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining BlockSign, OpenAssets and a royalty payment mechanism.
+Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining Proof of Existence, OpenAssets and a royalty payment mechanism.
 
-Like BlockSign, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
+Like Proof of Existence, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
 
 The Open Publish protocol allows claiming ownership over a digital asset that can be used by other products to represent a limited and non-exclusive copyright of this document.
 
 The Open Publish protocol allows for transfering partial ownership of these digital assets.
 
-Any honest third-party software can read the state of ownership from the Bitcoin blockchain and create software that directs payments to the legitimate owners of the content in the form of direct tips, monthly subscriptions or various synchronization licenses modeled on existing intellectual property systems.
+Any honest third-party software can read the state of ownership from the Bitcoin blockchain and create software that directs payments to the legitimate owners of the content in the form of direct tips, dividends, monthly subscriptions or various synchronization licenses modeled on existing intellectual property systems.
 
 For example, someone could write software that displays media with a consumer Bitcoin wallet allowing for people to easily and directly tip the rights-holders.
 
 It assumes that the wallet address that posted the Open Publish registration transaction to the Bitcoin blockchain is controlled by the owner of the registered media.
 
-Blockai cannot control what assets are registered on the Bitcoin blockchain so it is up to individual developers or development teams to make sure they honor their local rules and regulations pertaining to copyright. For example, Blockai will not display content that is deemed to not be owned by the claimant Bitcoin address, fully adhering to any DMCA notices.
+Blockai cannot control what assets are registered on the Bitcoin blockchain so it is up to individual developers or development teams to make sure they honor their local rules and regulations pertaining to copyright. For example, Blockai will not display content that is deemed to not be owned by the claimant Bitcoin address, fully adhering to any DMCA notices or other local regulations.
 
 # Install
 
@@ -128,41 +128,19 @@ Open Publish transactions are native Bitcoin transactions. This means they are b
 
 What this means is that neither Blockai nor any other private entity is required to register with Open Publish.
 
-### Open Publish State
+### Blockai Open Publish State Web Service
 
-Blockai runs and maintains it's own Open Publish state machine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
+Blockai runs and maintains it's own Open Publish state engine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
 
 Check out the [```openpublish-state```](https://github.com/blockai/openpublish-state) for more info.
 
-### Scanning without using Blockai's Open Publish State
+### Running Your Own Open Publish State Engine
 
-Here we're scanning for a list of Open Published documents for our wallet. During these early development stages Open Publish uses the [Blockcast](https://github.com/blockai/blockcast) protocol to embed data in the blockchain. As the protocol matures it will support additional small footprint formats.
+If you'd like to run your own Open Publish state engine you'll need a compatible data store and access to a Common Blockchain adapter like [```rpc-common-blockchain```](https://github.com/blockai/rpc-common-blockchain).
 
-In this example we're querying the bitcoin blockchain for all of Alice's transactions and then scanning them one by one to look for all of her Open Publish registrations.
+You can use this to independently verify the state of Open Publish registrations and transfers and to run your own Open Publish based services.
 
-```javascript
-commonBlockchain.Addresses.Transactions([aliceWallet.address], function(err, addresses_transactions) {
-  var transactions = addresses_transactions[0];
-  var openPublishDocuments = [];
-  transactions.forEach(function(tx) {
-    blockcast.scanSingle({
-      txid: tx.txid,
-      commonBlockchain: commonBlockchain
-    }, function(err, body) {
-      if (!message) {
-        return;
-      }
-      var data = JSON.parse(body);
-      if (!data) {
-        return;
-      }
-      if (data.op == "r") {
-        openPublishDocuments.push(data);
-      }
-    });
-  });
-});
-```
+Check out the [```openpublish-state-engine```](https://github.com/blockai/openpublish-state-engine) for more info.
 
 ## Tipping and Micropayments
 
