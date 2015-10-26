@@ -4,6 +4,7 @@ jasmine.getEnv().defaultTimeoutInterval = 50000
 
 var openpublish = require('../src/index')
 var blockcast = require('blockcast')
+var bitcoin = require('bitcoinjs-lib')
 var File = require('file-api').File
 var fs = require('fs')
 
@@ -174,6 +175,58 @@ describe('open-publish', function () {
           expect(transferData.value).toBe(assetValue)
           expect(transferData.ttl).toBe(ttl)
           expect(receipt.blockcastTx.txid).toBeDefined()
+          done()
+        })
+      })
+    })
+  })
+
+  it("Bob should propose a bid on one of Alice's assets", function (done) {
+    var assetValue = 50000000
+    var bitcoinValue = 12345
+    var ttl = 365
+    openpublish.createBid({
+      assetValue: assetValue,
+      bitcoinValue: bitcoinValue,
+      ttl: ttl,
+      sha1: sha1,
+      assetAddress: aliceWallet.address,
+      bitcoinWallet: bobWallet,
+      commonBlockchain: commonBlockchain
+    }, function (err, proposedBid) {
+      if (err) { } // TODO
+      expect(proposedBid.assetValue).toBe(assetValue)
+      done()
+    })
+  })
+
+  it("Bob should propose a bid on one of Alice's assets and she should accept, and then Bob should sign and post", function (done) {
+    var assetValue = 50000000
+    var bitcoinValue = 12345
+    var ttl = 365
+    openpublish.createBid({
+      assetValue: assetValue,
+      bitcoinValue: bitcoinValue,
+      ttl: ttl,
+      sha1: sha1,
+      assetAddress: aliceWallet.address,
+      bitcoinWallet: bobWallet,
+      commonBlockchain: commonBlockchain
+    }, function (err, proposedBid) {
+      if (err) { } // TODO
+      // console.log(proposedBid)
+      proposedBid.assetWallet = aliceWallet
+      proposedBid.commonBlockchain = commonBlockchain
+      openpublish.acceptBid(proposedBid, function (err, acceptedBid) {
+        // console.log(err, acceptedBid)
+        acceptedBid.bitcoinWallet = bobWallet
+        acceptedBid.commonBlockchain = commonBlockchain
+        openpublish.transferAcceptedBid(acceptedBid, function (err, receipt) {
+          console.log(err, receipt)
+          expect(receipt.transfer.assetValue).toBe(assetValue)
+          expect(receipt.transfer.assetAddress).toBe(aliceWallet.address)
+          expect(receipt.transfer.bitcoinValue).toBe(bitcoinValue)
+          expect(receipt.transfer.bitcoinAddress).toBe(bobWallet.address)
           done()
         })
       })

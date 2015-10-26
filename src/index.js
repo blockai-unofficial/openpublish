@@ -1,10 +1,13 @@
 var blockcast = require('blockcast')
 var createTorrent = require('create-torrent')
+var txHexToJSON = require('bitcoin-tx-hex-to-json')
+var bitcoin = require('bitcoinjs-lib')
 var FileReader = typeof (window) !== 'undefined' ? window.FileReader : require('filereader')
 var parseTorrent = require('parse-torrent')
 var multihash = require('multihashes')
 var bs58 = require('bs58')
 var crypto = require('crypto')
+var async = require('async')
 var opentip = require('./opentip')
 
 var register = function (options, callback) {
@@ -62,6 +65,130 @@ var transfer = function (options, callback) {
     }, function (err, blockcastTx) {
       if (err) { } // TODO
       var receipt = {
+        data: data,
+        blockcastTx: blockcastTx
+      }
+      callback(false, receipt)
+    })
+  })
+}
+
+var createBid = function (options, callback) {
+  var assetValue = options.assetValue
+  var bitcoinValue = options.bitcoinValue
+  var assetAddress = options.assetAddress
+  var sha1 = options.sha1
+  var ttl = options.ttl
+  var data = {
+    op: 't',
+    sha1: sha1,
+    value: assetValue,
+    ttl: ttl
+  }
+  var dataJSON = JSON.stringify(data)
+  var bitcoinWallet = options.bitcoinWallet
+  blockcast.bitcoinTransactionBuilder.createSignedTransactionsWithData({
+    returnWithUnsignedPrimary: true,
+    data: dataJSON,
+    fee: options.fee,
+    destinationAddress: assetAddress,
+    value: bitcoinValue,
+    commonWallet: bitcoinWallet,
+    commonBlockchain: options.commonBlockchain,
+    buildStatus: options.buildStatus
+  }, function (err, partialTransactions) {
+    callback(err, {
+      transactions: partialTransactions,
+      data: data,
+      bitcoinValue: bitcoinValue,
+      assetValue: assetValue,
+      assetAddress: assetAddress,
+      sha1: sha1,
+      ttl: ttl
+    })
+  })
+}
+
+var acceptBid = function (options, callback) {
+  // TODO verify the data and transactions
+  var data = options.data
+  var bitcoinValue = options.bitcoinValue
+  var assetValue = options.assetValue
+  var assetAddress = options.assetAddress
+  var assetWallet = options.assetWallet
+  var sha1 = options.sha1
+  var ttl = options.ttl
+  var commonBlockchain = options.commonBlockchain
+  var transactions = options.transactions
+  if (assetAddress !== assetWallet.address) {
+    return callback('mismatched assetAddress and assetWallet', false)
+  }
+  var primaryTxHex = transactions[0]
+  var secondaryTransactions = transactions.slice(1, transactions.length)
+  var primaryTx = bitcoin.TransactionBuilder.fromTransaction(bitcoin.Transaction.fromHex(primaryTxHex))
+
+  commonBlockchain.Addresses.Unspents([assetWallet.address], function (err, addressesUnspents) {
+    if (err && !addressesUnspents) {
+      callback(err, null)
+      return
+    }
+    var unspentOutputs = addressesUnspents[0]
+    var output = unspentOutputs[0]
+    var inputIndex = primaryTx.addInput(output.txid, output.vout)
+    primaryTx.addOutput(options.assetWallet.address, output.value)
+    var txHex = primaryTx.buildIncomplete().toHex()
+    assetWallet.signRawTransaction({txHex: txHex, input: inputIndex}, function (err, signedTxHex, txid) {
+      var newTransactions = [signedTxHex].concat(secondaryTransactions)
+      callback(err, {
+        transactions: newTransactions,
+        data: data,
+        bitcoinValue: bitcoinValue,
+        assetValue: assetValue,
+        assetAddress: assetAddress,
+        sha1: sha1,
+        ttl: ttl
+      })
+    })
+  })
+}
+
+var transferAcceptedBid = function (options, callback) {
+  // TODO verify the data and transactions
+  var assetValue = options.assetValue
+  var bitcoinValue = options.bitcoinValue
+  var assetAddress = options.assetAddress
+  var sha1 = options.sha1
+  var ttl = options.ttl
+  var data = options.data
+  var bitcoinWallet = options.bitcoinWallet
+  var transactions = options.transactions
+  var primaryTxHex = transactions[0]
+  var secondaryTransactions = transactions.slice(1, transactions.length)
+  var primaryTx = txHexToJSON(primaryTxHex)
+  async.each(primaryTx.vin, function (input, next) {
+    if (input.scriptSig.hex.length === 0) {
+      var inputIndex = primaryTx.vin.indexOf(input)
+      return bitcoinWallet.signRawTransaction({txHex: primaryTxHex, input: inputIndex}, function (err, signedTxHex) {
+        primaryTxHex = signedTxHex
+        next()
+      })
+    }
+    next()
+  }, function (err) {
+    if (err) { } // TODO
+    var signedTransactions = [primaryTxHex].concat(secondaryTransactions)
+    var primaryTx = txHexToJSON(primaryTxHex)
+    var txid = primaryTx.txid
+    var transfer = processTransfer(data, primaryTx)
+    blockcast.post({
+      signedTransactions: signedTransactions,
+      txid: txid,
+      data: data,
+      commonBlockchain: options.commonBlockchain,
+      propagationStatus: options.propagationStatus,
+    }, function (err, blockcastTx) {
+      var receipt = {
+        transfer: transfer,
         data: data,
         blockcastTx: blockcastTx
       }
@@ -255,12 +382,15 @@ var tip = function (options, callback) {
 var OpenPublish = {
   register: register,
   transfer: transfer,
+  createBid: createBid,
+  acceptBid: acceptBid,
   tip: tip,
   scanSingle: scanSingle,
   getData: getData,
   getPayloadsLength: getPayloadsLength,
   processRegistration: processRegistration,
-  processTransfer: processTransfer
+  processTransfer: processTransfer,
+  transferAcceptedBid: transferAcceptedBid
 }
 
 module.exports = OpenPublish
