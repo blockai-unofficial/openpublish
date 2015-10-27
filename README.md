@@ -56,7 +56,7 @@ var commonBlockchain = require('mem-common-blockchain')({
 
 // commonBlockchain = require('blockcypher-unofficial')({
 //   network: "testnet"
-// });
+// })
 ```
 
 ## Register Media with an Open Publish transaction posted to the Bitcoin network
@@ -125,13 +125,13 @@ openpublish.transfer({
 
 Alice and Bob will probably not have their wallets open at the same time and also need a way to negotiate and settle on a price before they both independently sign the transfer transactions.
 
-Bob decides he'd like to buy another 20000000 of the asset from Alice for 3000000 satoshi.
+Bob decides he'd like to buy another 20,000,000 of the asset from Alice for 3,000,000 satoshi.
 
 ```js
 // on Bob's computer
 openpublish.createBid({
   assetValue: 20000000,
-  bitcoinValue: 1000000,
+  bitcoinValue: 3000000,
   ttl: ttl,
   sha1: sha1,
   assetAddress: aliceWallet.address,
