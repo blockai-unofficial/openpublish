@@ -26,7 +26,7 @@ Blockai cannot control what assets are registered on the Bitcoin blockchain so i
 
 # Browser Usage
 
-In our examples we're going to use ```test-common-wallet``` to create our wallet.
+In our examples we're going to use [```test-common-wallet```](https://github.com/blockai/test-common-wallet) to create our wallet.
 
 This simple wallet and the Open Publish API adhere to the [Common Wallet](https://github.com/blockai/abstract-common-wallet) standard.
 
@@ -36,10 +36,10 @@ We will assume that this wallet is owned and operated by Alice.
 
 ```js
 var aliceWallet = testCommonWallet({
-  seed: "some-random-very-long-and-super-safe-passphrase",
-  network: "testnet",
+  seed: 'some-random-very-long-and-super-safe-passphrase',
+  network: 'testnet',
   commonBlockchain: commonBlockchain
-});
+})
 ```
 
 We'll need to provide an instance of a commonBlockchain which will provide functions for signing a transaction, propagating a trasnaction, and looking up a transaction by ```txid```.
@@ -48,9 +48,9 @@ In this example we're using the in memory version that is provided by ```mem-com
 
 
 ```javascript
-var commonBlockchain = require("mem-common-blockchain")({
-  type: "local"
-});
+var commonBlockchain = require('mem-common-blockchain')({
+  type: 'local'
+})
 
 // or we could connect to testnet
 
@@ -68,10 +68,10 @@ Files can be hosted on any existing web servers at the expense of the owner. A p
 In this example, Alice is using her wallet along with a file that she draged and dropped on to a web page.
 
 ```javascript
-var openpublish = require('openpublish');
+var openpublish = require('openpublish')
 
-var file; // a browser File object returned from drop or file select form
-var fileUri; // a permalink to the above file
+var file // a browser File object returned from drop or file select form
+var fileUri // a permalink to the above file
 
 openpublish.register({
   file: file,
@@ -79,12 +79,12 @@ openpublish.register({
   commonWallet: aliceWallet,
   commonBlockchain: commonBlockchain
 }, function(err, receipt) {
-  var registerData = receipt.data;
-  var sha1 = registerData.sha1; // the SHA-1 that represents your media file
-  var blockcastTx = receipt.blockcastTx;
-  var txid = blockcastTx.txid; // the Bitcoin transaction where the first payload of the the data is embedded
-  var transactionTotal = blockcastTx.transactionTotal; // the number of Bitcoin transactions in the data payload
-});
+  var registerData = receipt.data
+  var sha1 = registerData.sha1 // the SHA-1 that represents your media file
+  var blockcastTx = receipt.blockcastTx
+  var txid = blockcastTx.txid // the Bitcoin transaction where the first payload of the the data is embedded
+  var transactionTotal = blockcastTx.transactionTotal // the number of Bitcoin transactions in the data payload
+})
 ```
 
 ## Transfering ownership of digital assets
@@ -101,26 +101,77 @@ Transfers are only valid for a set number of days before full ownership reverts 
 
 ```js
 var bobWallet = testCommonWallet({
-  seed: "another-random-very-long-and-super-safe-passphrase",
-  network: "testnet",
+  seed: 'another-random-very-long-and-super-safe-passphrase',
+  network: 'testnet',
   commonBlockchain: commonBlockchain
-});
+})
+
+var sha1 = 'dc724af18fbdd4e59189f5fe768a5f8311527050'
 
 openpublish.transfer({
-    assetValue: 30000000, // the number of assets that Alice is transfering
-    bitcoinValue: 5000000, // the number of bitcoin that Bob is transfering
-    ttl: 365, // the number of days that the transfer is valid for before reverting back to Alice
-    sha1: registerData.sha1,
-    assetWallet: aliceWallet,
-    bitcoinWallet: bobWallet,
-    commonBlockchain: commonBlockchain
-  }, function(err, receipt) {
-    var blockcastTx = receipt.blockcastTx;
-    var txid = blockcastTx.txid; // the Bitcoin transaction where the first payload of the the data is embedded
-    var transactionTotal = blockcastTx.transactionTotal; // the number of Bitcoin transactions in the data payload
-  });
+  assetValue: 30000000, // the number of assets that Alice is transfering
+  bitcoinValue: 5000000, // the number of bitcoin that Bob is transfering
+  ttl: 365, // the number of days that the transfer is valid for before reverting back to Alice
+  sha1: registerData.sha1,
+  assetWallet: aliceWallet,
+  bitcoinWallet: bobWallet,
+  commonBlockchain: commonBlockchain
+}, function(err, receipt) {
+  var blockcastTx = receipt.blockcastTx
+  var txid = blockcastTx.txid // the Bitcoin transaction where the first payload of the the data is embedded
+  var transactionTotal = blockcastTx.transactionTotal // the number of Bitcoin transactions in the data payload
 });
 ```
+
+Alice and Bob will probably not have their wallets open at the same time and also need a way to negotiate and settle on a price before they both independently sign the transfer transactions.
+
+Bob decides he'd like to buy another 20000000 of the asset from Alice for 3000000 satoshi.
+
+```js
+// on Bob's computer
+openpublish.createBid({
+  assetValue: 20000000,
+  bitcoinValue: 1000000,
+  ttl: ttl,
+  sha1: sha1,
+  assetAddress: aliceWallet.address,
+  bitcoinWallet: bobWallet,
+  commonBlockchain: commonBlockchain
+}, function (err, proposedBid) {
+  sendToAlice(proposedBid)
+})
+```
+
+Alice recieves the bid and decides to accept the offer.
+
+```js
+// on Alice's computer
+var proposedBid = incomingBidOffersForAlice[0]
+proposedBid.assetWallet = aliceWallet
+proposedBid.commonBlockchain = commonBlockchain
+
+openpublish.acceptBid(proposedBid, function (err, acceptedBid) {
+  sendToBob(acceptedBid)
+})
+```
+
+Bob then recieves the accepted offer back, signs, and propagates the transfer.
+
+```js
+// on Bob's computer
+var acceptedBid = acceptedBidOffersForBob[0]
+acceptedBid.bitcoinWallet = bobWallet
+acceptedBid.commonBlockchain = commonBlockchain
+
+openpublish.transferAcceptedBid(acceptedBid, function (err, receipt) {
+  var transfer = receipt.transfer
+  var blockcastTx = receipt.blockcastTx
+  var txid = blockcastTx.txid // the Bitcoin transaction where the first payload of the the data is embedded
+  var transactionTotal = blockcastTx.transactionTotal // the number of Bitcoin transactions in the data payload
+})
+```
+
+This functionality allows for independent messaging services to create public order books for Open Publish asset transfers.
 
 ## Public stream
 
@@ -149,12 +200,12 @@ Open Publish comes with some very basic tipping functionalities. The tip will on
 In this example, Alice found a really great photograph that is represented by the SHA-1 ```d1aef793e057364f8bd7a0344b4aa77be4aa7561```. She used ```openpublish-state``` to find out the wallet address of the rights-holder and then sent them a tip in bitcoin.
 
 ```js
-var sha1 = "d1aef793e057364f8bd7a0344b4aa77be4aa7561";
+var sha1 = 'd1aef793e057364f8bd7a0344b4aa77be4aa7561'
 
 openpublishState.findDoc({
   sha1: sha1
 }, function(err, openpublishDoc) {
-  var tipDestinationAddress = openpublishDoc.sourceAddresses[0];
+  var tipDestinationAddress = openpublishDoc.sourceAddresses[0]
   openpublish.tip({
     destination: tipDestinationAddress,
     sha1: sha1,
@@ -162,8 +213,8 @@ openpublishState.findDoc({
     commonWallet: aliceWallet,
     commonBlockchain: commonBlockchain
   }, function(error, tipTx) {
-    var propagateResponse = tipTx.propagateResponse;
-    var txid = tipTx.txid;
-  });
-});
+    var propagateResponse = tipTx.propagateResponse
+    var txid = tipTx.txid
+  })
+})
 ```
