@@ -7,6 +7,7 @@ var blockcast = require('blockcast')
 var bitcoin = require('bitcoinjs-lib')
 var File = require('file-api').File
 var fs = require('fs')
+var shasum = require('shasum')
 
 var txHexToJSON = require('bitcoin-tx-hex-to-json')
 
@@ -403,6 +404,34 @@ describe('open-publish', function () {
       expect(tip.tipAmount).toBe(20000)
       expect(tip.tipDestinationAddresses[0]).toBe('mqMsBiNtGJdwdhKr12TqyRNE7RTvEeAkaR')
       done()
+    })
+  })
+
+  it('should preorder and register a name (inMemoryCommonBlockchain)', function (done) {
+    var name = 'test'
+    openpublish.preorderName({
+      name: name,
+      commonWallet: inMemoryAliceWallet,
+      commonBlockchain: inMemoryCommonBlockchain
+    }, function (err, preordeReceipt) {
+      if (err) { } // TODO
+      openpublish.registerName({
+        name: name,
+        commonWallet: inMemoryAliceWallet,
+        commonBlockchain: inMemoryCommonBlockchain
+      }, function (err, registerReceipt) {
+        if (err) { } // TODO
+        var data = registerReceipt.data
+        var doc = data.doc
+        var sha1 = shasum(JSON.stringify(data.doc))
+        var verify = bitcoin.Message.verify(inMemoryAliceWallet.address, doc.signedName, doc.name, bitcoin.networks.testnet)
+        expect(verify).toBe(true)
+        expect(sha1).toBe(data.sha1)
+        expect(name).toBe(doc.name)
+        expect(sha1).toBe(preordeReceipt.data.sha1)
+        expect(name).toBe(preordeReceipt.name)
+        done()
+      })
     })
   })
 })

@@ -73,6 +73,84 @@ var transfer = function (options, callback) {
   })
 }
 
+var getNameDocSha1 = function (options, callback) {
+  var name = options.name
+  var commonWallet = options.commonWallet
+  commonWallet.signMessage(name, function (err, signedName) {
+    if (err) { } // TODO
+    var doc = {
+      name: name,
+      signedName: signedName
+    }
+    var buffer = new Buffer(JSON.stringify(doc))
+    var arr = arr = new Uint8Array(buffer)
+    var sha1
+    if (typeof (window) === 'undefined') {
+      sha1 = crypto.createHash('sha1').update(buffer).digest('hex')
+    } else {
+      sha1 = crypto.createHash('sha1').update(arr).digest('hex')
+    }
+    callback(err, doc, sha1)
+  })
+}
+
+var preorderName = function (options, callback) {
+  var name = options.name
+  getNameDocSha1(options, function (err, doc, sha1) {
+    if (err) { } // TODO
+    var data = {
+      op: 'r',
+      sha1: sha1
+    }
+    var dataJSON = JSON.stringify(data)
+    blockcast.post({
+      data: dataJSON,
+      fee: options.fee,
+      commonWallet: options.commonWallet,
+      commonBlockchain: options.commonBlockchain,
+      propagationStatus: options.propagationStatus,
+      buildStatus: options.buildStatus
+    }, function (err, blockcastTx) {
+      if (err) { } // TODO
+      var receipt = {
+        name: name,
+        data: data,
+        blockcastTx: blockcastTx
+      }
+      callback(false, receipt)
+    })
+  })
+}
+
+var registerName = function (options, callback) {
+  var name = options.name
+  getNameDocSha1(options, function (err, doc, sha1) {
+    if (err) { } // TODO
+    var data = {
+      op: 'n',
+      sha1: sha1,
+      doc: doc
+    }
+    var dataJSON = JSON.stringify(data)
+    blockcast.post({
+      data: dataJSON,
+      fee: options.fee,
+      commonWallet: options.commonWallet,
+      commonBlockchain: options.commonBlockchain,
+      propagationStatus: options.propagationStatus,
+      buildStatus: options.buildStatus
+    }, function (err, blockcastTx) {
+      if (err) { } // TODO
+      var receipt = {
+        name: name,
+        data: data,
+        blockcastTx: blockcastTx
+      }
+      callback(false, receipt)
+    })
+  })
+}
+
 var createBid = function (options, callback) {
   var assetValue = options.assetValue
   var bitcoinValue = options.bitcoinValue
@@ -213,10 +291,17 @@ var getData = function (options, callback) {
   var title = options.title
   var uri = options.uri
   var sha1 = options.sha1
+  var ipfs = options.ipfs
   var reader = new FileReader()
-  reader.addEventListener('load', function (e) {
-    var arr = new Uint8Array(e.target.result)
-    var buffer = new Buffer(arr)
+  var name = options.name
+  var type = options.type
+  var size = options.size
+  var buffer = options.buffer
+  var arr
+  if (buffer) {
+    arr = new Uint8Array(buffer)
+  }
+  var onBufferArray = function (buffer, arr) {
     buffer.name = file.name
     if (!sha1) {
       if (typeof (window) === 'undefined') {
@@ -225,14 +310,16 @@ var getData = function (options, callback) {
         sha1 = crypto.createHash('sha1').update(arr).digest('hex')
       }
     }
-    var sha256Buffer
-    if (typeof (window) === 'undefined') {
-      sha256Buffer = crypto.createHash('sha256').update(buffer).digest('buffer')
-    } else {
-      sha256Buffer = new Buffer(crypto.createHash('sha256').update(arr).digest('hex'), 'hex')
+    if (!ipfs) {
+      var sha256Buffer
+      if (typeof (window) === 'undefined') {
+        sha256Buffer = crypto.createHash('sha256').update(buffer).digest('buffer')
+      } else {
+        sha256Buffer = new Buffer(crypto.createHash('sha256').update(arr).digest('hex'), 'hex')
+      }
+      var sha256MultihashBuffer = multihash.encode(sha256Buffer, 'sha2-256')
+      ipfs = bs58.encode(sha256MultihashBuffer)
     }
-    var sha256MultihashBuffer = multihash.encode(sha256Buffer, 'sha2-256')
-    var ipfs = bs58.encode(sha256MultihashBuffer)
     createTorrent(buffer, function onTorrent (err, torrentBuffer) {
       var torrent = parseTorrent(torrentBuffer)
       var btih = torrent.infoHash
@@ -242,14 +329,26 @@ var getData = function (options, callback) {
         sha1: sha1,
         ipfs: ipfs
       }
-      if (file.name) {
-        data.name = file.name
-      }
-      if (file.size) {
-        data.size = file.size
-      }
-      if (file.type) {
-        data.type = file.type
+      if (file) {
+        if (file.name) {
+          data.name = file.name
+        }
+        if (file.size) {
+          data.size = file.size
+        }
+        if (file.type) {
+          data.type = file.type
+        }
+      } else {
+        if (type) {
+          data.type = type
+        }
+        if (size) {
+          data.size = size
+        }
+        if (name) {
+          data.name = name
+        }
       }
       if (title) {
         data.title = title
@@ -262,8 +361,17 @@ var getData = function (options, callback) {
       }
       callback(err, data)
     })
-  })
-  reader.readAsArrayBuffer(file)
+  }
+  if (buffer && arr) {
+    onBufferArray(buffer, arr)
+  } else {
+    reader.addEventListener('load', function (e) {
+      var arr = new Uint8Array(e.target.result)
+      var buffer = new Buffer(arr)
+      onBufferArray(buffer, arr)
+    })
+    reader.readAsArrayBuffer(file)
+  }
 }
 
 var processRegistration = function (obj, tx) {
@@ -382,6 +490,8 @@ var tip = function (options, callback) {
 var OpenPublish = {
   register: register,
   transfer: transfer,
+  registerName: registerName,
+  preorderName: preorderName,
   createBid: createBid,
   acceptBid: acceptBid,
   tip: tip,
