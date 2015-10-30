@@ -407,13 +407,26 @@ describe('open-publish', function () {
     })
   })
 
+  it('should get the name registration document', function (done) {
+    var name = 'test'
+    openpublish.getNameDocSha1({
+      name: name,
+      commonWallet: inMemoryAliceWallet
+    }, function (err, doc, sha1) {
+      expect(sha1).toBe('911f46b5be919538ebcb85fed2213a1e992bdfde')
+      expect(doc.name).toBe(name)
+      expect(doc.signedName).toBe('H/dkwsr4i+VpWIsxvXQt9R+yYksFZPe6mgHiRN7Hadk1eiqrvIG9KhFBoQq9wld7L2zrgWJfKnMRMCe50U3ccYw=')
+      done()
+    })
+  })
+
   it('should preorder and register a name (inMemoryCommonBlockchain)', function (done) {
     var name = 'test'
     openpublish.preorderName({
       name: name,
       commonWallet: inMemoryAliceWallet,
       commonBlockchain: inMemoryCommonBlockchain
-    }, function (err, preordeReceipt) {
+    }, function (err, preorderReceipt) {
       if (err) { } // TODO
       openpublish.registerName({
         name: name,
@@ -428,8 +441,8 @@ describe('open-publish', function () {
         expect(verify).toBe(true)
         expect(sha1).toBe(data.sha1)
         expect(name).toBe(doc.name)
-        expect(sha1).toBe(preordeReceipt.data.sha1)
-        expect(name).toBe(preordeReceipt.name)
+        expect(sha1).toBe(preorderReceipt.data.sha1)
+        expect(name).toBe(preorderReceipt.name)
         done()
       })
     })

@@ -1,6 +1,6 @@
 {
   "name": "openpublish",
-  "version": "2.7.0",
+  "version": "2.8.0",
   "description": "A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.",
   "main": "src/index.js",
   "directories": {

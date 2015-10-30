@@ -497,6 +497,7 @@ var OpenPublish = {
   tip: tip,
   scanSingle: scanSingle,
   getData: getData,
+  getNameDocSha1: getNameDocSha1,
   getPayloadsLength: getPayloadsLength,
   processRegistration: processRegistration,
   processTransfer: processTransfer,
