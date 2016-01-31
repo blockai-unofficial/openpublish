@@ -302,7 +302,7 @@ var getData = function (options, callback) {
     arr = new Uint8Array(buffer)
   }
   var onBufferArray = function (buffer, arr) {
-    buffer.name = file.name
+    buffer.name = file ? file.name : name
     if (!sha1) {
       if (typeof (window) === 'undefined') {
         sha1 = crypto.createHash('sha1').update(buffer).digest('hex')
