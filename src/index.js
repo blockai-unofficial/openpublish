@@ -292,6 +292,7 @@ var getData = function (options, callback) {
   var uri = options.uri
   var sha1 = options.sha1
   var ipfs = options.ipfs
+  var btih = options.btih
   var reader = new FileReader()
   var name = options.name
   var type = options.type
@@ -320,57 +321,72 @@ var getData = function (options, callback) {
       var sha256MultihashBuffer = multihash.encode(sha256Buffer, 'sha2-256')
       ipfs = bs58.encode(sha256MultihashBuffer)
     }
-    createTorrent(buffer, function onTorrent (err, torrentBuffer) {
-      var torrent = parseTorrent(torrentBuffer)
-      var btih = torrent.infoHash
-      var data = {
-        op: 'r',
-        btih: btih,
-        sha1: sha1,
-        ipfs: ipfs
-      }
-      if (file) {
-        if (file.name) {
-          data.name = file.name
+    if (!btih) {
+      createTorrent(buffer, function onTorrent (err, torrentBuffer) {
+        var torrent = parseTorrent(torrentBuffer)
+        btih = torrent.infoHash
+        var data = {
+          op: 'r',
+          btih: btih,
+          sha1: sha1,
+          ipfs: ipfs
         }
-        if (file.size) {
-          data.size = file.size
+        if (file) {
+          if (file.name) {
+            data.name = file.name
+          }
+          if (file.size) {
+            data.size = file.size
+          }
+          if (file.type) {
+            data.type = file.type
+          }
+        } else {
+          if (type) {
+            data.type = type
+          }
+          if (size) {
+            data.size = size
+          }
+          if (name) {
+            data.name = name
+          }
         }
-        if (file.type) {
-          data.type = file.type
+        if (title) {
+          data.title = title
         }
-      } else {
-        if (type) {
-          data.type = type
+        if (uri) {
+          data.uri = uri
         }
-        if (size) {
-          data.size = size
+        if (keywords) {
+          data.keywords = keywords
         }
-        if (name) {
-          data.name = name
-        }
-      }
-      if (title) {
-        data.title = title
-      }
-      if (uri) {
-        data.uri = uri
-      }
-      if (keywords) {
-        data.keywords = keywords
-      }
-      callback(err, data)
-    })
+        callback(err, data)
+      })
+    }
   }
   if (buffer && arr) {
     onBufferArray(buffer, arr)
-  } else {
+  } else if (file) {
     reader.addEventListener('load', function (e) {
       var arr = new Uint8Array(e.target.result)
       var buffer = new Buffer(arr)
       onBufferArray(buffer, arr)
     })
     reader.readAsArrayBuffer(file)
+  } else {
+    var data = {
+      sha1: sha1,
+      name: name,
+      type: type,
+      size: size,
+      uri: uri,
+      ipfs: ipfs,
+      btih: btih,
+      title: title,
+      keywords: keywords
+    }
+    callback(false, data)
   }
 }
 
