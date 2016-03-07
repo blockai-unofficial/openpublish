@@ -1,12 +1,12 @@
 # Open Publish
 
-[![Build Status](http://drone.d.blockai.com/api/badge/github.com/blockai/openpublish/status.svg?branch=master)](http://drone.d.blockai.com/github.com/blockai/openpublish)
-
 A publishing protocol for registering media as a digital asset on the Bitcoin blockchain.
+
+Open Publish creates a similar system to the those describe by de Soto in his essay [The Mystery of Capital](http://www.imf.org/external/pubs/ft/fandd/2001/03/desoto.htm) by fixing the economic potential of assets, integrating dispersed information into one system, making people accountable, making assets fungible, networking people, and protecting transactions.
 
 Open Publish aims to give ownership of digital media back to the individual and allow individuals to create contracts for licensing and micropayment channels using Bitcoin. Think combining Proof of Existence, OpenAssets and a royalty payment mechanism.
 
-Like Proof of Existence, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with the BitTorrent Magnet URI scheme and IPFS address scheme.
+Like Proof of Existence, digital media is represented as a cryptographic digest but in a content-addressable format that works seamlessly with IPFS, BitTorrent and WebTorrent. This content-addressable representation is provably signed, timestamped, and recorded in perpetuity by the Bitcoin blockchain in a format compatible with both the BitTorrent Magnet URI scheme and IPFS address scheme.
 
 The Open Publish protocol allows claiming ownership over a digital asset that can be used by other products to represent a limited and non-exclusive copyright of this document.
 
