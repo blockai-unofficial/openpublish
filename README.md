@@ -191,15 +191,15 @@ Check out the [```openpublish-state-engine```](https://github.com/blockai/openpu
 
 Open Publish comes with some very basic tipping functionalities. The tip will only be valid if the destination address matches the owner of the asset as registered on the blockchain.
 
-In this example, Alice found a really great photograph that is represented by the SHA-1 ```d1aef793e057364f8bd7a0344b4aa77be4aa7561```. She used ```openpublish-state``` to find out the wallet address of the rights-holder and then sent them a tip in bitcoin.
+In this example, Alice found a really great photograph that is represented by the SHA-1 ```d1aef793e057364f8bd7a0344b4aa77be4aa7561```. She used the operations store she built for [```openpublish-state-engine```](https://github.com/blockai/openpublish-state-engine) to find out the wallet address of the rights-holder and then sent them a tip in bitcoin.
 
 ```js
 var sha1 = 'd1aef793e057364f8bd7a0344b4aa77be4aa7561'
 
-openpublishState.findDoc({
+openpublishOperationsStore.findRegistration.findRegistration({
   sha1: sha1
-}, function(err, openpublishDoc) {
-  var tipDestinationAddress = openpublishDoc.sourceAddresses[0]
+}, function(err, existingRegistration) {
+  var tipDestinationAddress = existingRegistration.addr
   openpublish.tip({
     destination: tipDestinationAddress,
     sha1: sha1,
