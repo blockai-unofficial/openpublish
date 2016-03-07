@@ -42,7 +42,7 @@ var aliceWallet = testCommonWallet({
 })
 ```
 
-We'll need to provide an instance of a commonBlockchain which will provide functions for signing a transaction, propagating a trasnaction, and looking up a transaction by ```txid```.
+We'll need to provide an instance of a commonBlockchain which will provide functions for signing a transaction, propagating a transaction, and looking up a transaction by ```txid```.
 
 In this example we're using the in memory version that is provided by ```mem-common-blockchain```.
 
@@ -178,12 +178,6 @@ This functionality allows for independent messaging services to create public or
 Open Publish transactions are native Bitcoin transactions. This means they are broadcast and stored on all nodes in the Bitcoin network. Anyone can freely stream, read, and write their own Open Publish transactions in same equal-access manner as native Bitcoin transactions. Open Publish takes advantage of the unique distributed yet single-source-of-truth nature of the Bitcoin blockchain.
 
 What this means is that neither Blockai nor any other private entity is required to register with Open Publish.
-
-### Blockai Open Publish State Web Service
-
-Blockai runs and maintains it's own Open Publish state engine which can be query about the state of ownership for individual assets, to get a list of assets owned by a particular Bitcoin address, to see the tips associated with a particular asset or owner, and more.
-
-Check out the [```openpublish-state```](https://github.com/blockai/openpublish-state) for more info.
 
 ### Running Your Own Open Publish State Engine
 
