@@ -196,7 +196,7 @@ In this example, Alice found a really great photograph that is represented by th
 ```js
 var sha1 = 'd1aef793e057364f8bd7a0344b4aa77be4aa7561'
 
-openpublishOperationsStore.findRegistration.findRegistration({
+openpublishOperationsStore.findRegistration({
   sha1: sha1
 }, function(err, existingRegistration) {
   var tipDestinationAddress = existingRegistration.addr
